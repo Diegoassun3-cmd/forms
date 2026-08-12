@@ -10,7 +10,7 @@ function isNonEmptyString(value) {
 function jsonResponse(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" },
   });
 }
 
@@ -242,22 +242,32 @@ export default {
       }
 
       if (url.pathname === "/admin") {
-        return new Response(ADMIN_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
+        return new Response(ADMIN_HTML, {
+          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+        });
       }
 
       if (url.pathname === "/styles.css") {
-        return new Response(STYLES_CSS, { headers: { "content-type": "text/css; charset=utf-8" } });
+        return new Response(STYLES_CSS, {
+          headers: { "content-type": "text/css; charset=utf-8", "cache-control": "no-store" },
+        });
       }
 
       if (url.pathname === "/app.js") {
-        return new Response(APP_JS, { headers: { "content-type": "text/javascript; charset=utf-8" } });
+        return new Response(APP_JS, {
+          headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store" },
+        });
       }
 
       if (url.pathname === "/images/placeholder.svg") {
-        return new Response(PLACEHOLDER_SVG, { headers: { "content-type": "image/svg+xml; charset=utf-8" } });
+        return new Response(PLACEHOLDER_SVG, {
+          headers: { "content-type": "image/svg+xml; charset=utf-8", "cache-control": "no-store" },
+        });
       }
 
-      return new Response(INDEX_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
+      return new Response(INDEX_HTML, {
+        headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+      });
     } catch (err) {
       // Nunca deixa a página de erro genérica da Cloudflare aparecer sem explicação:
       // mostra a mensagem real pra dar pra diagnosticar na hora.

@@ -285,7 +285,7 @@
     }
 
     async function loadData(token) {
-      const res = await fetch("/admin/data", { headers: { "x-admin-token": token } });
+      const res = await fetch("/admin/data", { headers: { "x-admin-token": token }, cache: "no-store" });
       if (!res.ok) {
         throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar dados.");
       }
@@ -387,7 +387,7 @@
 
     async function loadConfigIntoForm() {
       try {
-        const res = await fetch("/api/config");
+        const res = await fetch("/api/config", { cache: "no-store" });
         const data = await res.json();
         applyConfigToForm(data.config || DEFAULT_CONFIG);
       } catch {

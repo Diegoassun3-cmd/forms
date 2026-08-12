@@ -49,7 +49,7 @@ function mergeConfig(saved) {
 
 async function loadConfig() {
   try {
-    const res = await fetch("/api/config");
+    const res = await fetch("/api/config", { cache: "no-store" });
     if (!res.ok) return CONFIG;
     const data = await res.json();
     return mergeConfig(data.config);
