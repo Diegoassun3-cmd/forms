@@ -2,10 +2,10 @@
  * Formulário de candidatura — Solua Imóveis
  *
  * ---------------------------------------------------------------
- * PARA PERSONALIZAR: os textos/foto/perguntas padrão abaixo (CONFIG)
- * só valem enquanto ninguém salvou nada em Configurações no /admin.
- * Depois de salvar por lá, o que estiver no banco manda — este
- * objeto vira só o "modo de segurança" caso o banco esteja vazio.
+ * PARA PERSONALIZAR: os valores padrão abaixo (CONFIG) só valem
+ * enquanto ninguém salvou nada em Configurações no /admin. Depois de
+ * salvar por lá, o que estiver no banco manda — este objeto vira só
+ * o "modo de segurança" caso o banco esteja vazio ou fora do ar.
  * ---------------------------------------------------------------
  */
 const CAPA_URL = "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600";
@@ -27,29 +27,44 @@ const CONFIG = {
       "Leva menos de 5 minutos. Conte um pouco sobre sua experiência e a forma como você atua " +
       "no mercado imobiliário para darmos início à conversa.",
     buttonLabel: "Iniciar",
+    textAlign: "left",
+    textPosition: "bottom",
   },
   thanks: {
     title: "Recebemos sua candidatura!",
     message:
       "Obrigado por dedicar seu tempo. Nosso time vai analisar suas respostas e entrar em " +
       "contato pelo WhatsApp informado em breve.",
+    textAlign: "center",
+    textPosition: "center",
+    whatsappNumber: "",
+    whatsappMessage: "Olá! Acabei de enviar minha candidatura pelo site da Solua.",
   },
-  extraQuestions: [],
+  extraPages: [],
 };
 
 const BASE_STEPS = 5;
 let TOTAL_STEPS = BASE_STEPS;
-let extraQuestions = [];
+let extraPages = [];
 
 /** Mescla a configuração salva no banco (se houver) por cima dos padrões locais. */
 function mergeConfig(saved) {
   if (!saved || typeof saved !== "object") return CONFIG;
+
+  let mergedExtraPages = [];
+  if (Array.isArray(saved.extraPages)) {
+    mergedExtraPages = saved.extraPages;
+  } else if (Array.isArray(saved.extraQuestions) && saved.extraQuestions.length) {
+    // compatibilidade com configs salvas antes de existirem "páginas extras"
+    mergedExtraPages = [{ id: "p1", title: "Perguntas extras", questions: saved.extraQuestions }];
+  }
+
   return {
     capa: { ...CONFIG.capa, ...(saved.capa || {}) },
     logo: { ...CONFIG.logo, ...(saved.logo || {}) },
     landing: { ...CONFIG.landing, ...(saved.landing || {}) },
     thanks: { ...CONFIG.thanks, ...(saved.thanks || {}) },
-    extraQuestions: Array.isArray(saved.extraQuestions) ? saved.extraQuestions : [],
+    extraPages: mergedExtraPages,
   };
 }
 
@@ -70,6 +85,20 @@ function escapeHtml(value) {
   return div.innerHTML;
 }
 
+function digitsOnly(value) {
+  return String(value || "").replace(/\D/g, "");
+}
+
+function setTextAlign(el, align) {
+  el.classList.remove("text-align-left", "text-align-center", "text-align-right");
+  el.classList.add(`text-align-${["left", "center", "right"].includes(align) ? align : "left"}`);
+}
+
+function setTextPosition(el, position) {
+  el.classList.remove("text-pos-top", "text-pos-center", "text-pos-bottom");
+  el.classList.add(`text-pos-${["top", "center", "bottom"].includes(position) ? position : "bottom"}`);
+}
+
 const LOGO_POSITIONS = ["top-left", "top-center", "top-right", "bottom-left", "bottom-right"];
 
 function applyLogo(imgEl, cfg) {
@@ -83,6 +112,18 @@ function applyLogo(imgEl, cfg) {
   imgEl.classList.add(`brand-logo--${position}`);
 }
 
+function applyWhatsappButton(cfg) {
+  const btn = document.getElementById("thanks-whatsapp");
+  const number = digitsOnly(cfg.thanks.whatsappNumber);
+  if (!number) {
+    btn.classList.add("hidden");
+    return;
+  }
+  const text = encodeURIComponent(cfg.thanks.whatsappMessage || "");
+  btn.href = `https://wa.me/${number}${text ? `?text=${text}` : ""}`;
+  btn.classList.remove("hidden");
+}
+
 function applyConfig(cfg) {
   document.getElementById("landing-image").src = cfg.capa.image;
   document.getElementById("landing-image").style.objectPosition = cfg.capa.position || "center";
@@ -91,6 +132,10 @@ function applyConfig(cfg) {
   document.getElementById("landing-subtitle").textContent = cfg.landing.subtitle;
   document.getElementById("btn-start").textContent = cfg.landing.buttonLabel;
   applyLogo(document.getElementById("landing-logo"), cfg);
+
+  const landingContent = document.querySelector(".hero__content");
+  setTextAlign(landingContent, cfg.landing.textAlign);
+  setTextPosition(landingContent, cfg.landing.textPosition);
 
   const titleEl = document.getElementById("landing-title");
   titleEl.classList.remove("title-size-small", "title-size-large");
@@ -103,75 +148,93 @@ function applyConfig(cfg) {
   document.getElementById("thanks-title").textContent = cfg.thanks.title;
   document.getElementById("thanks-message").textContent = cfg.thanks.message;
   applyLogo(document.getElementById("thanks-logo"), cfg);
+  applyWhatsappButton(cfg);
+
+  const thanksContent = document.querySelector(".thanks__content");
+  setTextAlign(thanksContent, cfg.thanks.textAlign);
+  setTextPosition(thanksContent, cfg.thanks.textPosition);
 }
 
-/** Monta os campos da etapa extra (perguntas configuráveis) a partir do CONFIG. */
-function buildExtraStep(questions) {
-  const stepEl = document.getElementById("step-extra");
-  const fieldsEl = document.getElementById("step-extra-fields");
-  if (!stepEl || !fieldsEl) return;
+/** HTML de um único campo de pergunta, de acordo com o tipo configurado. */
+function renderQuestionField(q) {
+  const name = `extra_${q.id}`;
+  const label = escapeHtml(q.label);
 
-  if (!questions.length) {
-    stepEl.remove();
-    return;
+  if (q.type === "textarea") {
+    return `<div class="field">
+      <label class="field__label" for="${name}">${label}</label>
+      <textarea id="${name}" name="${name}" rows="3" ${q.required ? "required" : ""}></textarea>
+      <span class="field-error">Preencha esse campo.</span>
+    </div>`;
   }
 
-  fieldsEl.innerHTML = questions
-    .map((q) => {
-      const name = `extra_${q.id}`;
-      const label = escapeHtml(q.label);
-
-      if (q.type === "textarea") {
-        return `<div class="field">
-          <label class="field__label" for="${name}">${label}</label>
-          <textarea id="${name}" name="${name}" rows="3" ${q.required ? "required" : ""}></textarea>
-          <span class="field-error">Preencha esse campo.</span>
+  if (q.type === "escolha" || q.type === "checkbox") {
+    const inputType = q.type === "checkbox" ? "checkbox" : "radio";
+    const opts = (q.options || [])
+      .map((opt, oi) => {
+        const letter = String.fromCharCode(65 + oi);
+        return `<div class="option">
+          <input type="${inputType}" name="${name}" id="${name}-${oi}" value="${escapeHtml(opt)}" />
+          <label for="${name}-${oi}"><span class="option__letter">${letter}</span>${escapeHtml(opt)}</label>
         </div>`;
-      }
+      })
+      .join("");
+    const errMsg = q.type === "checkbox" ? "Selecione ao menos uma opção." : "Selecione uma opção.";
+    return `<div class="field">
+      <label class="field__label">${label}</label>
+      <div class="options" data-name="${name}" data-error="${errMsg}" ${q.required ? "" : 'data-optional="true"'}>${opts}</div>
+      <span class="field-error" data-for="${name}">${errMsg}</span>
+    </div>`;
+  }
 
-      if (q.type === "escolha" || q.type === "checkbox") {
-        const inputType = q.type === "checkbox" ? "checkbox" : "radio";
-        const opts = (q.options || [])
-          .map((opt, oi) => {
-            const letter = String.fromCharCode(65 + oi);
-            return `<div class="option">
-              <input type="${inputType}" name="${name}" id="${name}-${oi}" value="${escapeHtml(opt)}" />
-              <label for="${name}-${oi}"><span class="option__letter">${letter}</span>${escapeHtml(opt)}</label>
-            </div>`;
-          })
-          .join("");
-        const errMsg = q.type === "checkbox" ? "Selecione ao menos uma opção." : "Selecione uma opção.";
-        return `<div class="field">
-          <label class="field__label">${label}</label>
-          <div class="options" data-name="${name}" data-error="${errMsg}" ${q.required ? "" : 'data-optional="true"'}>${opts}</div>
-          <span class="field-error" data-for="${name}">${errMsg}</span>
-        </div>`;
-      }
+  if (q.type === "simnao") {
+    return `<div class="field">
+      <label class="field__label">${label}</label>
+      <div class="options simnao" data-name="${name}" data-error="Responda sim ou não." ${q.required ? "" : 'data-optional="true"'}>
+        <div class="option">
+          <input type="radio" name="${name}" id="${name}-sim" value="Sim" />
+          <label for="${name}-sim">Sim</label>
+        </div>
+        <div class="option">
+          <input type="radio" name="${name}" id="${name}-nao" value="Não" />
+          <label for="${name}-nao">Não</label>
+        </div>
+      </div>
+      <span class="field-error" data-for="${name}">Responda sim ou não.</span>
+    </div>`;
+  }
 
-      if (q.type === "simnao") {
-        return `<div class="field">
-          <label class="field__label">${label}</label>
-          <div class="options simnao" data-name="${name}" data-error="Responda sim ou não." ${q.required ? "" : 'data-optional="true"'}>
-            <div class="option">
-              <input type="radio" name="${name}" id="${name}-sim" value="Sim" />
-              <label for="${name}-sim">Sim</label>
-            </div>
-            <div class="option">
-              <input type="radio" name="${name}" id="${name}-nao" value="Não" />
-              <label for="${name}-nao">Não</label>
-            </div>
-          </div>
-          <span class="field-error" data-for="${name}">Responda sim ou não.</span>
-        </div>`;
-      }
+  return `<div class="field">
+    <label class="field__label" for="${name}">${label}</label>
+    <input type="text" id="${name}" name="${name}" ${q.required ? "required" : ""} />
+    <span class="field-error">Preencha esse campo.</span>
+  </div>`;
+}
 
-      return `<div class="field">
-        <label class="field__label" for="${name}">${label}</label>
-        <input type="text" id="${name}" name="${name}" ${q.required ? "required" : ""} />
-        <span class="field-error">Preencha esse campo.</span>
-      </div>`;
-    })
-    .join("");
+/** Cria uma etapa (página) do formulário para cada página extra configurada. */
+function buildExtraPages(pages) {
+  document.querySelectorAll(".step[data-extra-page]").forEach((el) => el.remove());
+  if (!pages.length) return;
+
+  const form = document.getElementById("form");
+  const actions = form.querySelector(".actions");
+
+  pages.forEach((page, i) => {
+    const stepNumber = BASE_STEPS + i + 1;
+    const section = document.createElement("section");
+    section.className = "step hidden";
+    section.dataset.step = String(stepNumber);
+    section.dataset.extraPage = "true";
+    section.innerHTML = `
+      <div class="progress"></div>
+      <span class="step__eyebrow">${String(stepNumber).padStart(2, "0")}</span>
+      <h2 class="step__title">${escapeHtml(page.title || "Mais perguntas")}</h2>
+      <div class="extra-page-fields">
+        ${(page.questions || []).map(renderQuestionField).join("")}
+      </div>
+    `;
+    form.insertBefore(section, actions);
+  });
 }
 
 function buildProgressBars() {
@@ -251,9 +314,13 @@ function validateStep(n) {
   return valid;
 }
 
+function allExtraQuestions() {
+  return extraPages.flatMap((p) => p.questions || []);
+}
+
 function collectExtraRespostas(fd) {
   const result = {};
-  extraQuestions.forEach((q) => {
+  allExtraQuestions().forEach((q) => {
     const name = `extra_${q.id}`;
     if (q.type === "checkbox") {
       const vals = fd.getAll(name);
@@ -333,11 +400,11 @@ async function submitForm() {
 async function init() {
   const cfg = await loadConfig();
 
-  extraQuestions = cfg.extraQuestions || [];
-  TOTAL_STEPS = BASE_STEPS + (extraQuestions.length > 0 ? 1 : 0);
+  extraPages = cfg.extraPages || [];
+  TOTAL_STEPS = BASE_STEPS + extraPages.length;
 
   applyConfig(cfg);
-  buildExtraStep(extraQuestions);
+  buildExtraPages(extraPages);
   buildProgressBars();
   showStep(1);
 

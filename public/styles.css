@@ -101,6 +101,17 @@ body {
   gap: 16px;
 }
 
+/* posição vertical do bloco de texto sobre a foto (só no celular — no
+   computador o texto já fica sempre centralizado no painel ao lado) */
+.hero__content.text-pos-top { margin-top: 0; margin-bottom: auto; }
+.hero__content.text-pos-center { margin-top: auto; margin-bottom: auto; }
+.hero__content.text-pos-bottom { margin-top: auto; margin-bottom: 0; }
+
+/* alinhamento horizontal do texto (e dos elementos do bloco) */
+.text-align-left { text-align: left; align-items: flex-start; }
+.text-align-center { text-align: center; align-items: center; }
+.text-align-right { text-align: right; align-items: flex-end; }
+
 .hero__title {
   font-size: 2.1rem;
   line-height: 1.15;
@@ -374,12 +385,14 @@ body {
   z-index: 2;
   margin: auto;
   padding: 40px 28px;
-  text-align: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 14px;
 }
+
+.thanks__content.text-pos-top { margin: 40px auto auto; }
+.thanks__content.text-pos-center { margin: auto; }
+.thanks__content.text-pos-bottom { margin: auto auto 40px; }
 
 .thanks__check {
   width: 56px;
@@ -407,6 +420,19 @@ body {
   line-height: 1.55;
   max-width: 46ch;
 }
+
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  background: #25d366;
+  color: #06301c;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.btn-whatsapp:hover { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3); }
 
 /* ---------- utilitários ---------- */
 
@@ -496,8 +522,6 @@ body {
     height: 100%;
     margin: 0;
     padding: 56px;
-    text-align: left;
-    align-items: flex-start;
   }
 
   .thanks__message { max-width: 40ch; }

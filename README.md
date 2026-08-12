@@ -64,11 +64,16 @@ Cada envio é validado no servidor (`src/index.js`) e gravado na tabela `candida
 Duas formas de consultar as respostas:
 
 1. **Painel `/admin`** (recomendado): abra `https://<seu-worker>/admin`, informe o token de
-   administrador. Duas abas:
+   administrador. Quatro abas:
    - **Candidaturas**: tabela com todas as respostas, exportação em CSV e botão de excluir por linha.
-   - **Configurações**: editar textos, capa (imagem, posição, gradiente), logo (imagem + posição) e
-     perguntas extras — texto curto, texto longo, múltipla escolha (uma ou várias opções) ou sim/não —
-     tudo salvo no D1 e aplicado na hora.
+   - **Páginas**: lista de todas as páginas do formulário, na ordem em que aparecem.
+   - **Configurações**: capa (imagem, posição, gradiente), logo (imagem + posição), textos e
+     alinhamento/posição do texto na tela inicial e de agradecimento, botão de WhatsApp na tela de
+     agradecimento, e páginas extras — cada uma com suas próprias perguntas (texto curto, texto
+     longo, múltipla escolha de uma ou várias opções, ou sim/não), reordenáveis com as setas ↑/↓.
+     Tudo salvo no D1 e aplicado na hora.
+   - **Visualizar**: o formulário ao vivo dentro do próprio painel, pra conferir o resultado sem
+     precisar abrir outra aba.
    - Configure o token em **Settings → Variables and Secrets → Add** → tipo *Secret* → variable name
      `ADMIN_TOKEN` → valor: uma senha à sua escolha. Sem isso o `/admin` fica bloqueado (401).
 2. **Direto no D1**: painel Cloudflare → **Workers & Pages → D1 → solua-candidaturas → Console**,

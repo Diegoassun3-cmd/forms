@@ -146,13 +146,41 @@ function str(value, max) {
 const QUESTION_TYPES = ["texto", "textarea", "escolha", "checkbox", "simnao"];
 const QUESTION_TYPES_WITH_OPTIONS = ["escolha", "checkbox"];
 const LOGO_POSITIONS = ["top-left", "top-center", "top-right", "bottom-left", "bottom-right"];
+const TEXT_ALIGNS = ["left", "center", "right"];
+const TEXT_POSITIONS = ["top", "center", "bottom"];
+
+function sanitizeQuestions(rawQuestions, pagePrefix) {
+  return (Array.isArray(rawQuestions) ? rawQuestions : [])
+    .slice(0, 20)
+    .map((q, i) => ({
+      id: `${pagePrefix}q${i + 1}`,
+      label: str(q && q.label, 200),
+      type: QUESTION_TYPES.includes(q && q.type) ? q.type : "texto",
+      options:
+        q && QUESTION_TYPES_WITH_OPTIONS.includes(q.type) && Array.isArray(q.options)
+          ? q.options.map((o) => str(o, 100)).filter(Boolean).slice(0, 10)
+          : [],
+      required: Boolean(q && q.required),
+    }))
+    .filter((q) => q.label);
+}
+
+function sanitizePages(rawPages) {
+  return (Array.isArray(rawPages) ? rawPages : [])
+    .slice(0, 10)
+    .map((p, i) => ({
+      id: "p" + (i + 1),
+      title: str(p && p.title, 100) || `Página extra ${i + 1}`,
+      questions: sanitizeQuestions(p && p.questions, `p${i + 1}_`),
+    }))
+    .filter((p) => p.questions.length > 0);
+}
 
 function sanitizeConfig(input) {
   const landing = input && input.landing ? input.landing : {};
   const thanks = input && input.thanks ? input.thanks : {};
   const capa = input && input.capa ? input.capa : {};
   const logo = input && input.logo ? input.logo : {};
-  const rawQuestions = input && Array.isArray(input.extraQuestions) ? input.extraQuestions : [];
 
   return {
     capa: {
@@ -169,24 +197,18 @@ function sanitizeConfig(input) {
       titleSize: ["small", "normal", "large"].includes(landing.titleSize) ? landing.titleSize : "normal",
       subtitle: str(landing.subtitle, 600),
       buttonLabel: str(landing.buttonLabel, 60),
+      textAlign: TEXT_ALIGNS.includes(landing.textAlign) ? landing.textAlign : "left",
+      textPosition: TEXT_POSITIONS.includes(landing.textPosition) ? landing.textPosition : "bottom",
     },
     thanks: {
       title: str(thanks.title, 200),
       message: str(thanks.message, 600),
+      textAlign: TEXT_ALIGNS.includes(thanks.textAlign) ? thanks.textAlign : "center",
+      textPosition: TEXT_POSITIONS.includes(thanks.textPosition) ? thanks.textPosition : "center",
+      whatsappNumber: str(thanks.whatsappNumber, 30),
+      whatsappMessage: str(thanks.whatsappMessage, 400),
     },
-    extraQuestions: rawQuestions
-      .slice(0, 20)
-      .map((q, i) => ({
-        id: "q" + (i + 1),
-        label: str(q && q.label, 200),
-        type: QUESTION_TYPES.includes(q && q.type) ? q.type : "texto",
-        options:
-          q && QUESTION_TYPES_WITH_OPTIONS.includes(q.type) && Array.isArray(q.options)
-            ? q.options.map((o) => str(o, 100)).filter(Boolean).slice(0, 10)
-            : [],
-        required: Boolean(q && q.required),
-      }))
-      .filter((q) => q.label),
+    extraPages: sanitizePages(input && input.extraPages),
   };
 }
 

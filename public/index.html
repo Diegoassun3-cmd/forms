@@ -257,14 +257,7 @@
         <div class="submit-error" id="submit-error"></div>
       </section>
 
-      <!-- ETAPA EXTRA: perguntas configuráveis pelo /admin. Só aparece se houver alguma. -->
-      <section class="step hidden" data-step="6" id="step-extra">
-        <div class="progress"></div>
-        <span class="step__eyebrow">06</span>
-        <h2 class="step__title">Mais algumas perguntas</h2>
-        <p class="step__desc">Perguntas adicionais definidas pela Solua.</p>
-        <div id="step-extra-fields"></div>
-      </section>
+      <!-- As páginas extras configuráveis pelo /admin são inseridas aqui dinamicamente pelo app.js -->
 
       <div class="actions">
         <button class="btn btn-ghost" id="btn-back" type="button">Voltar</button>
@@ -286,6 +279,9 @@
           Obrigado por dedicar seu tempo. Nosso time vai analisar suas respostas e entrar em
           contato pelo WhatsApp informado em breve.
         </p>
+        <a class="btn btn-primary btn-whatsapp hidden" id="thanks-whatsapp" href="#" target="_blank" rel="noopener">
+          Enviar mensagem no WhatsApp
+        </a>
       </div>
     </section>
 
