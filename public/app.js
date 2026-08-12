@@ -14,6 +14,11 @@ const CONFIG = {
   capa: {
     image: CAPA_URL,
     position: "center",
+    gradient: true,
+  },
+  logo: {
+    image: "",
+    position: "top-left",
   },
   landing: {
     title: "Vagas para corretores (as)",
@@ -41,6 +46,7 @@ function mergeConfig(saved) {
   if (!saved || typeof saved !== "object") return CONFIG;
   return {
     capa: { ...CONFIG.capa, ...(saved.capa || {}) },
+    logo: { ...CONFIG.logo, ...(saved.logo || {}) },
     landing: { ...CONFIG.landing, ...(saved.landing || {}) },
     thanks: { ...CONFIG.thanks, ...(saved.thanks || {}) },
     extraQuestions: Array.isArray(saved.extraQuestions) ? saved.extraQuestions : [],
@@ -64,12 +70,27 @@ function escapeHtml(value) {
   return div.innerHTML;
 }
 
+const LOGO_POSITIONS = ["top-left", "top-center", "top-right", "bottom-left", "bottom-right"];
+
+function applyLogo(imgEl, cfg) {
+  const hasLogo = Boolean(cfg.logo && cfg.logo.image);
+  imgEl.classList.toggle("hidden", !hasLogo);
+  if (!hasLogo) return;
+
+  imgEl.src = cfg.logo.image;
+  LOGO_POSITIONS.forEach((pos) => imgEl.classList.remove(`brand-logo--${pos}`));
+  const position = LOGO_POSITIONS.includes(cfg.logo.position) ? cfg.logo.position : "top-left";
+  imgEl.classList.add(`brand-logo--${position}`);
+}
+
 function applyConfig(cfg) {
   document.getElementById("landing-image").src = cfg.capa.image;
   document.getElementById("landing-image").style.objectPosition = cfg.capa.position || "center";
+  document.getElementById("landing-overlay").classList.toggle("is-hidden", cfg.capa.gradient === false);
   document.getElementById("landing-title").textContent = cfg.landing.title;
   document.getElementById("landing-subtitle").textContent = cfg.landing.subtitle;
   document.getElementById("btn-start").textContent = cfg.landing.buttonLabel;
+  applyLogo(document.getElementById("landing-logo"), cfg);
 
   const titleEl = document.getElementById("landing-title");
   titleEl.classList.remove("title-size-small", "title-size-large");
@@ -78,8 +99,10 @@ function applyConfig(cfg) {
 
   document.getElementById("thanks-image").src = cfg.capa.image;
   document.getElementById("thanks-image").style.objectPosition = cfg.capa.position || "center";
+  document.getElementById("thanks-overlay").classList.toggle("is-hidden", cfg.capa.gradient === false);
   document.getElementById("thanks-title").textContent = cfg.thanks.title;
   document.getElementById("thanks-message").textContent = cfg.thanks.message;
+  applyLogo(document.getElementById("thanks-logo"), cfg);
 }
 
 /** Monta os campos da etapa extra (perguntas configuráveis) a partir do CONFIG. */
@@ -106,20 +129,39 @@ function buildExtraStep(questions) {
         </div>`;
       }
 
-      if (q.type === "escolha") {
+      if (q.type === "escolha" || q.type === "checkbox") {
+        const inputType = q.type === "checkbox" ? "checkbox" : "radio";
         const opts = (q.options || [])
           .map((opt, oi) => {
             const letter = String.fromCharCode(65 + oi);
             return `<div class="option">
-              <input type="radio" name="${name}" id="${name}-${oi}" value="${escapeHtml(opt)}" />
+              <input type="${inputType}" name="${name}" id="${name}-${oi}" value="${escapeHtml(opt)}" />
               <label for="${name}-${oi}"><span class="option__letter">${letter}</span>${escapeHtml(opt)}</label>
             </div>`;
           })
           .join("");
+        const errMsg = q.type === "checkbox" ? "Selecione ao menos uma opção." : "Selecione uma opção.";
         return `<div class="field">
           <label class="field__label">${label}</label>
-          <div class="options" data-name="${name}" data-error="Selecione uma opção." ${q.required ? "" : 'data-optional="true"'}>${opts}</div>
-          <span class="field-error" data-for="${name}">Selecione uma opção.</span>
+          <div class="options" data-name="${name}" data-error="${errMsg}" ${q.required ? "" : 'data-optional="true"'}>${opts}</div>
+          <span class="field-error" data-for="${name}">${errMsg}</span>
+        </div>`;
+      }
+
+      if (q.type === "simnao") {
+        return `<div class="field">
+          <label class="field__label">${label}</label>
+          <div class="options simnao" data-name="${name}" data-error="Responda sim ou não." ${q.required ? "" : 'data-optional="true"'}>
+            <div class="option">
+              <input type="radio" name="${name}" id="${name}-sim" value="Sim" />
+              <label for="${name}-sim">Sim</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="${name}" id="${name}-nao" value="Não" />
+              <label for="${name}-nao">Não</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="${name}">Responda sim ou não.</span>
         </div>`;
       }
 
@@ -212,7 +254,13 @@ function validateStep(n) {
 function collectExtraRespostas(fd) {
   const result = {};
   extraQuestions.forEach((q) => {
-    const val = fd.get(`extra_${q.id}`);
+    const name = `extra_${q.id}`;
+    if (q.type === "checkbox") {
+      const vals = fd.getAll(name);
+      if (vals.length) result[q.label] = vals.join(", ");
+      return;
+    }
+    const val = fd.get(name);
     if (val) result[q.label] = val;
   });
   return result;

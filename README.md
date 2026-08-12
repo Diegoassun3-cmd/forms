@@ -66,7 +66,9 @@ Duas formas de consultar as respostas:
 1. **Painel `/admin`** (recomendado): abra `https://<seu-worker>/admin`, informe o token de
    administrador. Duas abas:
    - **Candidaturas**: tabela com todas as respostas, exportação em CSV e botão de excluir por linha.
-   - **Configurações**: editar textos, capa e perguntas extras do formulário (salva no D1, aplica na hora).
+   - **Configurações**: editar textos, capa (imagem, posição, gradiente), logo (imagem + posição) e
+     perguntas extras — texto curto, texto longo, múltipla escolha (uma ou várias opções) ou sim/não —
+     tudo salvo no D1 e aplicado na hora.
    - Configure o token em **Settings → Variables and Secrets → Add** → tipo *Secret* → variable name
      `ADMIN_TOKEN` → valor: uma senha à sua escolha. Sem isso o `/admin` fica bloqueado (401).
 2. **Direto no D1**: painel Cloudflare → **Workers & Pages → D1 → solua-candidaturas → Console**,

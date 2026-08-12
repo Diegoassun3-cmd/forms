@@ -137,17 +137,27 @@ function str(value, max) {
   return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
+const QUESTION_TYPES = ["texto", "textarea", "escolha", "checkbox", "simnao"];
+const QUESTION_TYPES_WITH_OPTIONS = ["escolha", "checkbox"];
+const LOGO_POSITIONS = ["top-left", "top-center", "top-right", "bottom-left", "bottom-right"];
+
 /** Valida e normaliza a configuração recebida do painel admin antes de salvar. */
 function sanitizeConfig(input) {
   const landing = input && input.landing ? input.landing : {};
   const thanks = input && input.thanks ? input.thanks : {};
   const capa = input && input.capa ? input.capa : {};
+  const logo = input && input.logo ? input.logo : {};
   const rawQuestions = input && Array.isArray(input.extraQuestions) ? input.extraQuestions : [];
 
   return {
     capa: {
       image: str(capa.image, 800),
       position: ["top", "center", "bottom"].includes(capa.position) ? capa.position : "center",
+      gradient: capa.gradient !== false,
+    },
+    logo: {
+      image: str(logo.image, 800),
+      position: LOGO_POSITIONS.includes(logo.position) ? logo.position : "top-left",
     },
     landing: {
       title: str(landing.title, 200),
@@ -164,9 +174,9 @@ function sanitizeConfig(input) {
       .map((q, i) => ({
         id: "q" + (i + 1),
         label: str(q && q.label, 200),
-        type: ["texto", "textarea", "escolha"].includes(q && q.type) ? q.type : "texto",
+        type: QUESTION_TYPES.includes(q && q.type) ? q.type : "texto",
         options:
-          q && q.type === "escolha" && Array.isArray(q.options)
+          q && QUESTION_TYPES_WITH_OPTIONS.includes(q.type) && Array.isArray(q.options)
             ? q.options.map((o) => str(o, 100)).filter(Boolean).slice(0, 10)
             : [],
         required: Boolean(q && q.required),

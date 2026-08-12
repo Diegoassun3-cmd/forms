@@ -58,6 +58,8 @@
       width: 100%; border: 1.5px solid var(--creme-escuro); border-radius: 10px;
       padding: 13px 14px; font-size: 1rem; font-family: inherit; color: var(--texto); background: var(--branco);
     }
+    .field-checkbox { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+    .field-checkbox input { width: auto; }
 
     .extra-q {
       border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px; margin-bottom: 12px;
@@ -148,6 +150,32 @@
               <option value="bottom">Base</option>
             </select>
           </div>
+          <div class="field">
+            <label class="field-checkbox">
+              <input type="checkbox" id="cfg-capa-gradient" checked />
+              Mostrar gradiente escuro sobre a foto (celular e computador)
+            </label>
+            <span class="field__hint">Desligue se quiser a foto sem nenhum escurecimento por cima.</span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Logo</h2>
+          <p class="field__hint">Opcional. Aparece sobre a foto, na tela inicial e na de agradecimento.</p>
+          <div class="field">
+            <label class="field__label" for="cfg-logo-image">URL da logo</label>
+            <input type="text" id="cfg-logo-image" placeholder="https://... (deixe em branco pra não mostrar)" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-logo-position">Posição da logo</label>
+            <select class="settings-select" id="cfg-logo-position">
+              <option value="top-left">Superior esquerda</option>
+              <option value="top-center">Superior centro</option>
+              <option value="top-right">Superior direita</option>
+              <option value="bottom-left">Inferior esquerda</option>
+              <option value="bottom-right">Inferior direita</option>
+            </select>
+          </div>
         </div>
 
         <div class="settings-section">
@@ -211,6 +239,11 @@
       capa: {
         image: "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600",
         position: "center",
+        gradient: true,
+      },
+      logo: {
+        image: "",
+        position: "top-left",
       },
       landing: {
         title: "Vagas para corretores (as)",
@@ -335,6 +368,8 @@
     // Configurações
     // ---------------------------------------------------------------
 
+    const QUESTION_TYPES_WITH_OPTIONS = ["escolha", "checkbox"];
+
     function renderExtraQuestionsEditor() {
       const container = document.getElementById("extra-questions-editor");
       if (!extraQuestionsDraft.length) {
@@ -348,9 +383,11 @@
           <div class="extra-q__row">
             <input type="text" class="extra-q-label" placeholder="Pergunta" value="${esc(q.label)}" />
             <select class="extra-q-type settings-select">
-              <option value="texto" ${q.type === "texto" ? "selected" : ""}>Texto curto</option>
-              <option value="textarea" ${q.type === "textarea" ? "selected" : ""}>Texto longo</option>
-              <option value="escolha" ${q.type === "escolha" ? "selected" : ""}>Múltipla escolha</option>
+              <option value="texto" ${q.type === "texto" ? "selected" : ""}>Texto curto (escrever)</option>
+              <option value="textarea" ${q.type === "textarea" ? "selected" : ""}>Texto longo (escrever)</option>
+              <option value="escolha" ${q.type === "escolha" ? "selected" : ""}>Múltipla escolha — uma opção (botão)</option>
+              <option value="checkbox" ${q.type === "checkbox" ? "selected" : ""}>Múltipla escolha — várias opções (botão)</option>
+              <option value="simnao" ${q.type === "simnao" ? "selected" : ""}>Sim ou não (botão)</option>
             </select>
             <label class="extra-q__required">
               <input type="checkbox" class="extra-q-required" ${q.required ? "checked" : ""} /> Obrigatória
@@ -360,7 +397,7 @@
           <textarea
             class="extra-q-options"
             placeholder="Uma opção por linha"
-            style="${q.type === "escolha" ? "" : "display:none;"}"
+            style="${QUESTION_TYPES_WITH_OPTIONS.includes(q.type) ? "" : "display:none;"}"
           >${esc((q.options || []).join("\n"))}</textarea>
         </div>`
         )
@@ -372,9 +409,24 @@
       renderExtraQuestionsEditor();
     }
 
+    /** Preenche buracos de uma config salva antes desta versão (sem logo/gradient, por ex.). */
+    function fillConfigDefaults(saved) {
+      const s = saved || {};
+      return {
+        capa: { ...DEFAULT_CONFIG.capa, ...(s.capa || {}) },
+        logo: { ...DEFAULT_CONFIG.logo, ...(s.logo || {}) },
+        landing: { ...DEFAULT_CONFIG.landing, ...(s.landing || {}) },
+        thanks: { ...DEFAULT_CONFIG.thanks, ...(s.thanks || {}) },
+        extraQuestions: Array.isArray(s.extraQuestions) ? s.extraQuestions : [],
+      };
+    }
+
     function applyConfigToForm(cfg) {
       document.getElementById("cfg-capa-image").value = cfg.capa.image || "";
       document.getElementById("cfg-capa-position").value = cfg.capa.position || "center";
+      document.getElementById("cfg-capa-gradient").checked = cfg.capa.gradient !== false;
+      document.getElementById("cfg-logo-image").value = cfg.logo.image || "";
+      document.getElementById("cfg-logo-position").value = cfg.logo.position || "top-left";
       document.getElementById("cfg-landing-title").value = cfg.landing.title || "";
       document.getElementById("cfg-landing-title-size").value = cfg.landing.titleSize || "normal";
       document.getElementById("cfg-landing-subtitle").value = cfg.landing.subtitle || "";
@@ -389,7 +441,7 @@
       try {
         const res = await fetch("/api/config", { cache: "no-store" });
         const data = await res.json();
-        applyConfigToForm(data.config || DEFAULT_CONFIG);
+        applyConfigToForm(fillConfigDefaults(data.config));
       } catch {
         applyConfigToForm(DEFAULT_CONFIG);
       }
@@ -413,6 +465,11 @@
         capa: {
           image: document.getElementById("cfg-capa-image").value.trim(),
           position: document.getElementById("cfg-capa-position").value,
+          gradient: document.getElementById("cfg-capa-gradient").checked,
+        },
+        logo: {
+          image: document.getElementById("cfg-logo-image").value.trim(),
+          position: document.getElementById("cfg-logo-position").value,
         },
         landing: {
           title: document.getElementById("cfg-landing-title").value.trim(),
@@ -532,7 +589,7 @@
     document.getElementById("extra-questions-editor").addEventListener("change", (e) => {
       if (e.target.classList.contains("extra-q-type")) {
         const optionsEl = e.target.closest(".extra-q").querySelector(".extra-q-options");
-        optionsEl.style.display = e.target.value === "escolha" ? "" : "none";
+        optionsEl.style.display = QUESTION_TYPES_WITH_OPTIONS.includes(e.target.value) ? "" : "none";
       }
     });
 
