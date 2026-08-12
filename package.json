@@ -1,0 +1,14 @@
+{
+  "name": "solua-forms",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Formulário de candidatura para corretores(as) parceiros(as) da Solua Imóveis, hospedado em Cloudflare Workers.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrate": "wrangler d1 execute solua-candidaturas --remote --file=./migrations/0001_create_candidaturas.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

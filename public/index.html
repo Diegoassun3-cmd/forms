@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Trabalhe com a Solua Imóveis</title>
+  <meta name="description" content="Cadastro de corretores(as) parceiros(as) — Solua Imóveis" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===================== TELA INICIAL ===================== -->
+    <section class="hero" data-screen="landing">
+      <img class="hero__image" id="landing-image" src="/images/placeholder.svg" alt="" />
+      <div class="hero__overlay"></div>
+      <div class="hero__content">
+        <span class="hero__eyebrow" id="landing-eyebrow">Solua Imóveis</span>
+        <h1 class="hero__title" id="landing-title">Vagas para corretores(as) parceiros(as)</h1>
+        <p class="hero__subtitle" id="landing-subtitle">
+          Leva menos de 5 minutos. Conte um pouco sobre sua experiência e a forma como você atua
+          no mercado imobiliário para darmos início à conversa.
+        </p>
+        <button class="btn btn-primary" id="btn-start" type="button">Iniciar</button>
+      </div>
+    </section>
+
+    <!-- ===================== FORMULÁRIO (multi-etapas) ===================== -->
+    <form id="form" class="hidden" novalidate>
+
+      <!-- honeypot anti-spam -->
+      <div class="honeypot" aria-hidden="true">
+        <label>Não preencha este campo<input type="text" name="website" id="website" tabindex="-1" autocomplete="off" /></label>
+      </div>
+
+      <!-- ETAPA 1 -->
+      <section class="step" data-step="1">
+        <div class="progress"></div>
+        <span class="step__eyebrow">01</span>
+        <h2 class="step__title">Seus dados</h2>
+        <p class="step__desc">Para começarmos, precisamos te conhecer.</p>
+
+        <div class="field">
+          <label class="field__label" for="nome">Nome completo</label>
+          <input type="text" id="nome" name="nome" autocomplete="name" required />
+          <span class="field-error">Informe seu nome completo.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="email">E-mail</label>
+          <input type="email" id="email" name="email" autocomplete="email" required />
+          <span class="field-error">Informe um e-mail válido.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="whatsapp">WhatsApp (com DDD)</label>
+          <span class="field__hint">É por aqui que faremos o primeiro contato.</span>
+          <input type="tel" id="whatsapp" name="whatsapp" placeholder="(00) 00000-0000" autocomplete="tel" required />
+          <span class="field-error">Informe um WhatsApp com DDD.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="cidade">Cidade / Estado</label>
+          <input type="text" id="cidade" name="cidade" placeholder="Ex.: Fortaleza / CE" required />
+          <span class="field-error">Informe cidade e estado.</span>
+        </div>
+      </section>
+
+      <!-- ETAPA 2 -->
+      <section class="step hidden" data-step="2">
+        <div class="progress"></div>
+        <span class="step__eyebrow">02</span>
+        <h2 class="step__title">Dados profissionais</h2>
+
+        <div class="field">
+          <label class="field__label" for="creci">Número do CRECI (opcional)</label>
+          <input type="text" id="creci" name="creci" />
+        </div>
+
+        <div class="field">
+          <label class="field__label">Tempo de experiência como corretor(a)</label>
+          <div class="options" data-name="experiencia" data-error="Selecione uma opção.">
+            <div class="option">
+              <input type="radio" name="experiencia" id="exp-a" value="Menos de 1 ano" />
+              <label for="exp-a"><span class="option__letter">A</span>Menos de 1 ano</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="experiencia" id="exp-b" value="1 a 3 anos" />
+              <label for="exp-b"><span class="option__letter">B</span>1 a 3 anos</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="experiencia" id="exp-c" value="3 a 5 anos" />
+              <label for="exp-c"><span class="option__letter">C</span>3 a 5 anos</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="experiencia" id="exp-d" value="Mais de 5 anos" />
+              <label for="exp-d"><span class="option__letter">D</span>Mais de 5 anos</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="experiencia">Selecione uma opção.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Já atuou diretamente com captação de imóveis?</label>
+          <span class="field__hint">Prospecção de proprietários, visitas de captação, assinatura de autorização de venda.</span>
+          <div class="options simnao" data-name="captacaoResposta" data-error="Responda sim ou não.">
+            <div class="option">
+              <input type="radio" name="captacaoResposta" id="captacao-sim" value="Sim" />
+              <label for="captacao-sim">Sim</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="captacaoResposta" id="captacao-nao" value="Não" />
+              <label for="captacao-nao">Não</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="captacaoResposta">Responda sim ou não.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="captacaoComentario">Comente sobre</label>
+          <span class="field__hint">Se quiser, dê um pouco mais de contexto sobre sua resposta.</span>
+          <textarea id="captacaoComentario" name="captacaoComentario" rows="3"></textarea>
+        </div>
+      </section>
+
+      <!-- ETAPA 3 -->
+      <section class="step hidden" data-step="3">
+        <div class="progress"></div>
+        <span class="step__eyebrow">03</span>
+        <h2 class="step__title">Mercado de atuação</h2>
+        <p class="step__desc">Onde e com o que você trabalha hoje.</p>
+
+        <div class="field">
+          <label class="field__label" for="regioes">Região(ões) de atuação</label>
+          <span class="field__hint">Cidades, bairros ou eixos onde você já circula e tem rede de contatos.</span>
+          <textarea id="regioes" name="regioes" rows="3" required></textarea>
+          <span class="field-error">Conte um pouco sobre sua região de atuação.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Tipos de imóvel com que mais trabalha</label>
+          <span class="field__hint">Pode marcar mais de uma opção.</span>
+          <div class="options" data-name="tiposImovel" data-error="Selecione ao menos uma opção." data-multi="true">
+            <div class="option">
+              <input type="checkbox" name="tiposImovel" id="tipo-a" value="Residencial" />
+              <label for="tipo-a"><span class="option__letter">A</span>Residencial</label>
+            </div>
+            <div class="option">
+              <input type="checkbox" name="tiposImovel" id="tipo-b" value="Comercial" />
+              <label for="tipo-b"><span class="option__letter">B</span>Comercial</label>
+            </div>
+            <div class="option">
+              <input type="checkbox" name="tiposImovel" id="tipo-c" value="Terrenos" />
+              <label for="tipo-c"><span class="option__letter">C</span>Terrenos</label>
+            </div>
+            <div class="option">
+              <input type="checkbox" name="tiposImovel" id="tipo-d" value="Rural" />
+              <label for="tipo-d"><span class="option__letter">D</span>Rural</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="tiposImovel">Selecione ao menos uma opção.</span>
+        </div>
+      </section>
+
+      <!-- ETAPA 4 -->
+      <section class="step hidden" data-step="4">
+        <div class="progress"></div>
+        <span class="step__eyebrow">04</span>
+        <h2 class="step__title">Disponibilidade</h2>
+        <p class="step__desc">Como você pode se dedicar à rotina de trabalho.</p>
+
+        <div class="field">
+          <label class="field__label">Disponibilidade</label>
+          <div class="options" data-name="disponibilidade" data-error="Selecione uma opção.">
+            <div class="option">
+              <input type="radio" name="disponibilidade" id="disp-a" value="Período integral" />
+              <label for="disp-a"><span class="option__letter">A</span>Período integral</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="disponibilidade" id="disp-b" value="Meio período" />
+              <label for="disp-b"><span class="option__letter">B</span>Meio período</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="disponibilidade" id="disp-c" value="Freelancer / por demanda" />
+              <label for="disp-c"><span class="option__letter">C</span>Freelancer / por demanda</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="disponibilidade">Selecione uma opção.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Possui veículo próprio?</label>
+          <div class="options simnao" data-name="veiculo" data-error="Responda sim ou não.">
+            <div class="option">
+              <input type="radio" name="veiculo" id="veiculo-sim" value="Sim" />
+              <label for="veiculo-sim">Sim</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="veiculo" id="veiculo-nao" value="Não" />
+              <label for="veiculo-nao">Não</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="veiculo">Responda sim ou não.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="portfolio">Portfólio / redes sociais</label>
+          <span class="field__hint">Opcional. Instagram, LinkedIn ou site onde acompanhamos seu trabalho.</span>
+          <input type="text" id="portfolio" name="portfolio" placeholder="@seuinstagram, linkedin.com/in/..., etc." />
+        </div>
+      </section>
+
+      <!-- ETAPA 5 -->
+      <section class="step hidden" data-step="5">
+        <div class="progress"></div>
+        <span class="step__eyebrow">05</span>
+        <h2 class="step__title">Expectativas</h2>
+        <p class="step__desc">Para fecharmos, o que você espera dessa parceria.</p>
+
+        <div class="field">
+          <label class="field__label" for="remuneracao">Modelo de remuneração</label>
+          <span class="field__hint">Seja direto: modelo de comissionamento que considera justo e, se houver, fixo pretendido.</span>
+          <textarea id="remuneracao" name="remuneracao" rows="3" required></textarea>
+          <span class="field-error">Conte o que você espera de remuneração.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="sobreVoce">Sobre você</label>
+          <span class="field__hint">O que te move no mercado imobiliário, uma captação da qual você se orgulha, e por que a Solua.</span>
+          <textarea id="sobreVoce" name="sobreVoce" rows="4"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Autorização LGPD</label>
+          <span class="field__hint">
+            Autorizo a Solua Imóveis a armazenar e tratar meus dados pessoais informados neste formulário,
+            conforme a Lei Geral de Proteção de Dados (LGPD), exclusivamente para fins de recrutamento e
+            contato sobre esta vaga.
+          </span>
+          <div class="options simnao" data-name="lgpd" data-error="É necessário autorizar para enviar a candidatura.">
+            <div class="option">
+              <input type="radio" name="lgpd" id="lgpd-sim" value="Sim" />
+              <label for="lgpd-sim">Sim</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="lgpd" id="lgpd-nao" value="Não" />
+              <label for="lgpd-nao">Não</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="lgpd">É necessário autorizar para enviar a candidatura.</span>
+        </div>
+
+        <div class="submit-error" id="submit-error"></div>
+      </section>
+
+      <div class="actions" style="padding: 0 24px 40px; margin-top: -12px;">
+        <button class="btn btn-ghost" id="btn-back" type="button">Voltar</button>
+        <button class="btn btn-primary" id="btn-next" type="button">Avançar</button>
+      </div>
+    </form>
+
+    <!-- ===================== TELA DE AGRADECIMENTO ===================== -->
+    <section class="thanks hidden" data-screen="thanks">
+      <img class="hero__image" id="thanks-image" src="/images/placeholder.svg" alt="" />
+      <div class="hero__overlay"></div>
+      <div class="thanks__content">
+        <div class="thanks__check">✓</div>
+        <h1 class="thanks__title" id="thanks-title">Recebemos sua candidatura!</h1>
+        <p class="thanks__message" id="thanks-message">
+          Obrigado por dedicar seu tempo. Nosso time vai analisar suas respostas e entrar em
+          contato pelo WhatsApp informado em breve.
+        </p>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
