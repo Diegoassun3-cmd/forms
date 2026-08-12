@@ -101,10 +101,14 @@ async function handleSubmit(request, env) {
   return jsonResponse({ ok: true });
 }
 
+function isAuthorizedAdmin(request, env) {
+  const token = request.headers.get("x-admin-token") || "";
+  return Boolean(env.ADMIN_TOKEN) && token === env.ADMIN_TOKEN;
+}
+
 /** Lista as candidaturas para a área administrativa (protegida por token). */
 async function handleAdminData(request, env) {
-  const token = request.headers.get("x-admin-token") || "";
-  if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
+  if (!isAuthorizedAdmin(request, env)) {
     return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
   }
 
@@ -113,6 +117,21 @@ async function handleAdminData(request, env) {
   ).all();
 
   return jsonResponse({ ok: true, rows: results });
+}
+
+/** Exclui uma candidatura pelo id (protegida por token). */
+async function handleAdminDelete(request, env, id) {
+  if (!isAuthorizedAdmin(request, env)) {
+    return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  }
+
+  if (!id || !/^\d+$/.test(id)) {
+    return jsonResponse({ ok: false, error: "ID inválido." }, 400);
+  }
+
+  await env.DB.prepare("DELETE FROM candidaturas WHERE id = ?").bind(id).run();
+
+  return jsonResponse({ ok: true });
 }
 
 export default {
@@ -126,6 +145,11 @@ export default {
 
       if (url.pathname === "/api/submit") {
         return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
+      }
+
+      if (url.pathname.startsWith("/admin/data/") && request.method === "DELETE") {
+        const id = url.pathname.slice("/admin/data/".length);
+        return await handleAdminDelete(request, env, id);
       }
 
       if (url.pathname === "/admin/data") {

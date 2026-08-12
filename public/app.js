@@ -12,7 +12,7 @@ const CAPA_URL = "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU
 const CONFIG = {
   landing: {
     image: CAPA_URL,
-    title: "Vagas para corretores(as) parceiros(as)",
+    title: "Vagas para corretores (as)",
     subtitle:
       "Leva menos de 5 minutos. Conte um pouco sobre sua experiência e a forma como você atua " +
       "no mercado imobiliário para darmos início à conversa.",
