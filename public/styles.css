@@ -1,13 +1,15 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+
 :root {
-  --verde-escuro: #0f3d2e;
-  --verde: #1c6e4a;
-  --dourado: #c9a24b;
-  --dourado-claro: #e8c766;
-  --creme: #f7f3ea;
-  --texto: #232420;
-  --texto-suave: #5b5f57;
-  --erro: #b3261e;
-  --borda: #ddd6c4;
+  --azul: #024ba5;
+  --azul-escuro: #012e66;
+  --azul-tint: #e5edf9;
+  --creme: #f2ede6;
+  --creme-escuro: #e2d9c9;
+  --branco: #ffffff;
+  --texto: #0b1b2b;
+  --texto-suave: #5c6773;
+  --erro: #c23b2e;
   --radius: 14px;
   font-size: 16px;
 }
@@ -21,7 +23,7 @@ html, body {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--creme);
   color: var(--texto);
   display: flex;
@@ -32,8 +34,8 @@ body {
   width: 100%;
   max-width: 640px;
   min-height: 100vh;
-  background: #fff;
-  box-shadow: 0 0 40px rgba(15, 61, 46, 0.08);
+  background: var(--branco);
+  box-shadow: 0 0 40px rgba(2, 75, 165, 0.08);
   display: flex;
   flex-direction: column;
 }
@@ -46,6 +48,7 @@ body {
   display: flex;
   flex-direction: column;
   color: #fff;
+  background: var(--azul-escuro);
 }
 
 .hero__image {
@@ -60,7 +63,7 @@ body {
 .hero__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(15,61,46,0.55) 0%, rgba(15,61,46,0.80) 65%, rgba(15,61,46,0.95) 100%);
+  background: linear-gradient(180deg, rgba(1,46,102,0.45) 0%, rgba(1,46,102,0.82) 65%, rgba(1,20,46,0.96) 100%);
   z-index: 1;
 }
 
@@ -78,20 +81,21 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.14em;
   font-size: 0.78rem;
-  color: var(--dourado-claro);
-  font-weight: 600;
+  color: var(--creme);
+  font-weight: 700;
 }
 
 .hero__title {
-  font-size: 2rem;
+  font-size: 2.1rem;
   line-height: 1.15;
   margin: 0;
-  font-weight: 700;
+  font-weight: 900;
+  letter-spacing: -0.01em;
 }
 
 .hero__subtitle {
   margin: 0;
-  color: #ece7d8;
+  color: #dfe7f2;
   font-size: 1rem;
   line-height: 1.5;
 }
@@ -104,7 +108,7 @@ body {
   border-radius: 999px;
   padding: 16px 28px;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
   font-family: inherit;
@@ -113,12 +117,12 @@ body {
 .btn:active { transform: scale(0.98); }
 
 .btn-primary {
-  background: var(--dourado);
-  color: #1a1a12;
-  box-shadow: 0 8px 20px rgba(201, 162, 75, 0.35);
+  background: var(--azul);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(2, 75, 165, 0.35);
 }
 
-.btn-primary:hover { box-shadow: 0 10px 24px rgba(201, 162, 75, 0.45); }
+.btn-primary:hover { box-shadow: 0 10px 24px rgba(2, 75, 165, 0.45); }
 
 .btn-primary:disabled {
   opacity: 0.45;
@@ -132,7 +136,14 @@ body {
   padding: 16px 18px;
 }
 
-.hero .btn-primary { width: 100%; }
+.hero .btn-primary {
+  width: 100%;
+  background: var(--creme);
+  color: var(--azul-escuro);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.hero .btn-primary:hover { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3); }
 
 .actions {
   display: flex;
@@ -163,14 +174,14 @@ body {
   flex: 1;
   height: 4px;
   border-radius: 2px;
-  background: var(--borda);
+  background: var(--creme-escuro);
   overflow: hidden;
 }
 
-.progress__bar.is-filled { background: var(--dourado); }
+.progress__bar.is-filled { background: var(--azul); }
 
 .step__eyebrow {
-  color: var(--verde);
+  color: var(--azul);
   font-weight: 700;
   letter-spacing: 0.06em;
   font-size: 0.8rem;
@@ -181,7 +192,8 @@ body {
 .step__title {
   font-size: 1.5rem;
   margin: 0 0 6px;
-  color: var(--verde-escuro);
+  color: var(--texto);
+  font-weight: 900;
 }
 
 .step__desc {
@@ -196,7 +208,7 @@ body {
 
 .field label.field__label {
   display: block;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 4px;
   color: var(--texto);
 }
@@ -214,20 +226,20 @@ body {
 .field input[type="tel"],
 .field textarea {
   width: 100%;
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--creme-escuro);
   border-radius: 10px;
   padding: 13px 14px;
   font-size: 1rem;
   font-family: inherit;
   color: var(--texto);
-  background: #fff;
+  background: var(--branco);
   transition: border-color 0.15s ease;
 }
 
 .field input:focus,
 .field textarea:focus {
   outline: none;
-  border-color: var(--verde);
+  border-color: var(--azul);
 }
 
 .field textarea {
@@ -272,7 +284,7 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--creme-escuro);
   border-radius: 10px;
   padding: 13px 14px;
   cursor: pointer;
@@ -284,7 +296,7 @@ body {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  border: 1.5px solid var(--borda);
+  border: 1.5px solid var(--creme-escuro);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -294,18 +306,18 @@ body {
 }
 
 .option input:checked + label {
-  border-color: var(--verde);
-  background: rgba(28, 110, 74, 0.06);
+  border-color: var(--azul);
+  background: var(--azul-tint);
 }
 
 .option input:checked + label .option__letter {
-  background: var(--verde);
-  border-color: var(--verde);
+  background: var(--azul);
+  border-color: var(--azul);
   color: #fff;
 }
 
 .option input:focus-visible + label {
-  outline: 2px solid var(--verde);
+  outline: 2px solid var(--azul);
   outline-offset: 2px;
 }
 
@@ -328,6 +340,7 @@ body {
   display: flex;
   flex-direction: column;
   color: #fff;
+  background: var(--azul-escuro);
 }
 
 .thanks__content {
@@ -346,23 +359,25 @@ body {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--dourado);
-  color: #1a1a12;
+  background: var(--creme);
+  color: var(--azul-escuro);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.6rem;
   margin-bottom: 6px;
+  font-weight: 900;
 }
 
 .thanks__title {
   font-size: 1.7rem;
   margin: 0;
+  font-weight: 900;
 }
 
 .thanks__message {
   margin: 0;
-  color: #ece7d8;
+  color: #dfe7f2;
   line-height: 1.55;
   max-width: 46ch;
 }
@@ -373,8 +388,8 @@ body {
 
 .submit-error {
   color: var(--erro);
-  background: rgba(179, 38, 30, 0.08);
-  border: 1px solid rgba(179, 38, 30, 0.25);
+  background: rgba(194, 59, 46, 0.08);
+  border: 1px solid rgba(194, 59, 46, 0.25);
   border-radius: 10px;
   padding: 12px 14px;
   margin-top: 16px;
@@ -388,8 +403,8 @@ body {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  border: 2px solid rgba(26,26,18,0.35);
-  border-top-color: #1a1a12;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
   animation: spin 0.7s linear infinite;
   display: inline-block;
   vertical-align: middle;

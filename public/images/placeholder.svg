@@ -1,13 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#0f3d2e"/>
-      <stop offset="100%" stop-color="#1c6e4a"/>
+      <stop offset="0%" stop-color="#012e66"/>
+      <stop offset="100%" stop-color="#024ba5"/>
     </linearGradient>
   </defs>
   <rect width="800" height="600" fill="url(#g)"/>
-  <g fill="#e8c766" opacity="0.9">
-    <path d="M400 160 L560 280 L560 440 L440 440 L440 340 L360 340 L360 440 L240 440 L240 280 Z" fill="none" stroke="#e8c766" stroke-width="10" stroke-linejoin="round"/>
+  <g fill="none" stroke="#f2ede6" stroke-width="10" stroke-linejoin="round">
+    <path d="M400 160 L560 280 L560 440 L440 440 L440 340 L360 340 L360 440 L240 440 L240 280 Z"/>
   </g>
-  <text x="400" y="500" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="34" fill="#f4ead0">Solua Imóveis</text>
+  <text x="400" y="500" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="34" fill="#f2ede6">Solua Imóveis</text>
 </svg>
