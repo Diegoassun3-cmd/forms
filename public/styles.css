@@ -51,20 +51,24 @@ body {
   background: var(--azul-escuro);
 }
 
+.hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
 .hero__image {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  z-index: 0;
 }
 
 .hero__overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(1,46,102,0.45) 0%, rgba(1,46,102,0.82) 65%, rgba(1,20,46,0.96) 100%);
-  z-index: 1;
 }
 
 .hero__content {
@@ -75,14 +79,6 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
-}
-
-.hero__eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 0.78rem;
-  color: var(--creme);
-  font-weight: 700;
 }
 
 .hero__title {
@@ -150,7 +146,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 28px;
+  margin-top: -12px;
+  padding: 0 24px 40px;
 }
 
 .actions .btn-primary { flex: 1; }
@@ -343,6 +340,12 @@ body {
   background: var(--azul-escuro);
 }
 
+.thanks__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
 .thanks__content {
   position: relative;
   z-index: 2;
@@ -414,3 +417,82 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .honeypot { position: absolute; left: -9999px; top: -9999px; }
+
+/* ---------- Telas maiores (tablet / desktop) ---------- */
+
+@media (min-width: 900px) {
+  body {
+    padding: 48px 24px;
+    align-items: center;
+  }
+
+  #app {
+    max-width: 1000px;
+    min-height: auto;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(2, 75, 165, 0.18);
+  }
+
+  /* tela inicial e agradecimento viram duas colunas: foto + conteúdo */
+  .hero,
+  .thanks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 620px;
+  }
+
+  .hero__media,
+  .thanks__media {
+    position: relative;
+    inset: auto;
+    height: 100%;
+  }
+
+  .hero__overlay {
+    background: none;
+  }
+
+  .hero__content {
+    position: relative;
+    margin-top: 0;
+    height: 100%;
+    justify-content: center;
+    padding: 56px;
+    gap: 20px;
+  }
+
+  .hero__title { font-size: 2.5rem; }
+  .hero__subtitle { font-size: 1.05rem; max-width: 40ch; }
+
+  .hero .btn-primary {
+    width: auto;
+    align-self: flex-start;
+    padding: 16px 36px;
+  }
+
+  .thanks__content {
+    height: 100%;
+    margin: 0;
+    padding: 56px;
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .thanks__message { max-width: 40ch; }
+
+  /* etapas do formulário: card mais largo, conteúdo com leitura confortável */
+  .step {
+    min-height: 560px;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 56px 0 64px;
+    justify-content: center;
+  }
+
+  .actions {
+    max-width: 600px;
+    margin: -12px auto 0;
+    padding: 0 0 56px;
+  }
+}

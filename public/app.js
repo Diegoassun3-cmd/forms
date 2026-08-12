@@ -7,10 +7,11 @@
  * e apontando `image` para o novo caminho (ex.: "/images/foto.jpg").
  * ---------------------------------------------------------------
  */
+const CAPA_URL = "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600";
+
 const CONFIG = {
   landing: {
-    image: "/images/placeholder.svg",
-    eyebrow: "Solua Imóveis",
+    image: CAPA_URL,
     title: "Vagas para corretores(as) parceiros(as)",
     subtitle:
       "Leva menos de 5 minutos. Conte um pouco sobre sua experiência e a forma como você atua " +
@@ -18,7 +19,7 @@ const CONFIG = {
     buttonLabel: "Iniciar",
   },
   thanks: {
-    image: "/images/placeholder.svg",
+    image: CAPA_URL,
     title: "Recebemos sua candidatura!",
     message:
       "Obrigado por dedicar seu tempo. Nosso time vai analisar suas respostas e entrar em " +
@@ -30,7 +31,6 @@ const TOTAL_STEPS = 5;
 
 function applyConfig() {
   document.getElementById("landing-image").src = CONFIG.landing.image;
-  document.getElementById("landing-eyebrow").textContent = CONFIG.landing.eyebrow;
   document.getElementById("landing-title").textContent = CONFIG.landing.title;
   document.getElementById("landing-subtitle").textContent = CONFIG.landing.subtitle;
   document.getElementById("btn-start").textContent = CONFIG.landing.buttonLabel;
