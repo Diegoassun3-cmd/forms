@@ -127,33 +127,43 @@ async function handleAdminData(request, env) {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
+    try {
+      const url = new URL(request.url);
 
-    if (url.pathname === "/api/submit") {
-      if (request.method !== "POST") return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
-      return handleSubmit(request, env);
+      if (url.pathname === "/api/submit") {
+        if (request.method !== "POST") return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
+        return await handleSubmit(request, env);
+      }
+
+      if (url.pathname === "/admin/data") {
+        return await handleAdminData(request, env);
+      }
+
+      if (url.pathname === "/admin") {
+        return new Response(ADMIN_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
+      }
+
+      if (url.pathname === "/styles.css") {
+        return new Response(STYLES_CSS, { headers: { "content-type": "text/css; charset=utf-8" } });
+      }
+
+      if (url.pathname === "/app.js") {
+        return new Response(APP_JS, { headers: { "content-type": "text/javascript; charset=utf-8" } });
+      }
+
+      if (url.pathname === "/images/placeholder.svg") {
+        return new Response(PLACEHOLDER_SVG, { headers: { "content-type": "image/svg+xml; charset=utf-8" } });
+      }
+
+      return new Response(INDEX_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
+    } catch (err) {
+      // Nunca deixa a página de erro genérica da Cloudflare aparecer sem explicação:
+      // mostra a mensagem real pra dar pra diagnosticar na hora.
+      const message = (err && err.stack) || String(err);
+      return new Response("Erro no Worker:\n\n" + message, {
+        status: 500,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
     }
-
-    if (url.pathname === "/admin/data") {
-      return handleAdminData(request, env);
-    }
-
-    if (url.pathname === "/admin") {
-      return new Response(ADMIN_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
-    }
-
-    if (url.pathname === "/styles.css") {
-      return new Response(STYLES_CSS, { headers: { "content-type": "text/css; charset=utf-8" } });
-    }
-
-    if (url.pathname === "/app.js") {
-      return new Response(APP_JS, { headers: { "content-type": "text/javascript; charset=utf-8" } });
-    }
-
-    if (url.pathname === "/images/placeholder.svg") {
-      return new Response(PLACEHOLDER_SVG, { headers: { "content-type": "image/svg+xml; charset=utf-8" } });
-    }
-
-    return new Response(INDEX_HTML, { headers: { "content-type": "text/html; charset=utf-8" } });
   },
 };

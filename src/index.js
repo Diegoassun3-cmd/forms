@@ -117,24 +117,34 @@ async function handleAdminData(request, env) {
 
 export default {
   async fetch(request, env) {
-    const url = new URL(request.url);
+    try {
+      const url = new URL(request.url);
 
-    if (url.pathname === "/api/submit" && request.method === "POST") {
-      return handleSubmit(request, env);
+      if (url.pathname === "/api/submit" && request.method === "POST") {
+        return await handleSubmit(request, env);
+      }
+
+      if (url.pathname === "/api/submit") {
+        return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
+      }
+
+      if (url.pathname === "/admin/data") {
+        return await handleAdminData(request, env);
+      }
+
+      if (url.pathname === "/admin") {
+        return env.ASSETS.fetch(new Request(new URL("/admin.html", request.url), request));
+      }
+
+      return env.ASSETS.fetch(request);
+    } catch (err) {
+      // Nunca deixa a página de erro genérica da Cloudflare aparecer sem explicação:
+      // mostra a mensagem real pra dar pra diagnosticar na hora.
+      const message = (err && err.stack) || String(err);
+      return new Response("Erro no Worker:\n\n" + message, {
+        status: 500,
+        headers: { "content-type": "text/plain; charset=utf-8" },
+      });
     }
-
-    if (url.pathname === "/api/submit") {
-      return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
-    }
-
-    if (url.pathname === "/admin/data") {
-      return handleAdminData(request, env);
-    }
-
-    if (url.pathname === "/admin") {
-      return env.ASSETS.fetch(new Request(new URL("/admin.html", request.url), request));
-    }
-
-    return env.ASSETS.fetch(request);
   },
 };
