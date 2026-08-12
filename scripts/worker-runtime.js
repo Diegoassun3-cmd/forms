@@ -50,6 +50,7 @@ async function handleSubmit(request, env) {
   }
 
   const now = new Date().toISOString();
+  const extraRespostas = body.extraRespostas && typeof body.extraRespostas === "object" ? body.extraRespostas : {};
 
   if (!env.DB) {
     return jsonResponse(
@@ -62,8 +63,8 @@ async function handleSubmit(request, env) {
     await env.DB.prepare(
       `INSERT INTO candidaturas
         (nome, email, whatsapp, cidade, creci, experiencia, captacao, regioes,
-         tipos_imovel, disponibilidade, veiculo, portfolio, remuneracao, sobre_voce, lgpd, criado_em)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+         tipos_imovel, disponibilidade, veiculo, portfolio, remuneracao, sobre_voce, lgpd, criado_em, extra_respostas)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
       .bind(
         body.nome.trim(),
@@ -81,7 +82,8 @@ async function handleSubmit(request, env) {
         body.remuneracao.trim(),
         (body.sobreVoce || "").trim() || null,
         "Sim",
-        now
+        now,
+        Object.keys(extraRespostas).length ? JSON.stringify(extraRespostas) : null
       )
       .run();
   } catch (err) {
@@ -131,6 +133,87 @@ async function handleAdminDelete(request, env, id) {
   return jsonResponse({ ok: true });
 }
 
+function str(value, max) {
+  return typeof value === "string" ? value.trim().slice(0, max) : "";
+}
+
+/** Valida e normaliza a configuração recebida do painel admin antes de salvar. */
+function sanitizeConfig(input) {
+  const landing = input && input.landing ? input.landing : {};
+  const thanks = input && input.thanks ? input.thanks : {};
+  const capa = input && input.capa ? input.capa : {};
+  const rawQuestions = input && Array.isArray(input.extraQuestions) ? input.extraQuestions : [];
+
+  return {
+    capa: {
+      image: str(capa.image, 800),
+      position: ["top", "center", "bottom"].includes(capa.position) ? capa.position : "center",
+    },
+    landing: {
+      title: str(landing.title, 200),
+      titleSize: ["small", "normal", "large"].includes(landing.titleSize) ? landing.titleSize : "normal",
+      subtitle: str(landing.subtitle, 600),
+      buttonLabel: str(landing.buttonLabel, 60),
+    },
+    thanks: {
+      title: str(thanks.title, 200),
+      message: str(thanks.message, 600),
+    },
+    extraQuestions: rawQuestions
+      .slice(0, 20)
+      .map((q, i) => ({
+        id: "q" + (i + 1),
+        label: str(q && q.label, 200),
+        type: ["texto", "textarea", "escolha"].includes(q && q.type) ? q.type : "texto",
+        options:
+          q && q.type === "escolha" && Array.isArray(q.options)
+            ? q.options.map((o) => str(o, 100)).filter(Boolean).slice(0, 10)
+            : [],
+        required: Boolean(q && q.required),
+      }))
+      .filter((q) => q.label),
+  };
+}
+
+/** Retorna a configuração salva (ou null se ninguém salvou nada ainda). */
+async function handleGetConfig(env) {
+  if (!env.DB) return jsonResponse({ ok: true, config: null });
+  try {
+    const row = await env.DB.prepare("SELECT data FROM site_config WHERE id = 1").first();
+    return jsonResponse({ ok: true, config: row ? JSON.parse(row.data) : null });
+  } catch {
+    return jsonResponse({ ok: true, config: null });
+  }
+}
+
+/** Salva a configuração (protegido por token). */
+async function handleSaveConfig(request, env) {
+  if (!isAuthorizedAdmin(request, env)) {
+    return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  }
+
+  if (!env.DB) {
+    return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  const config = sanitizeConfig(body);
+
+  await env.DB.prepare(
+    "INSERT INTO site_config (id, data) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data"
+  )
+    .bind(JSON.stringify(config))
+    .run();
+
+  return jsonResponse({ ok: true, config });
+}
+
 export default {
   async fetch(request, env) {
     try {
@@ -139,6 +222,14 @@ export default {
       if (url.pathname === "/api/submit") {
         if (request.method !== "POST") return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
         return await handleSubmit(request, env);
+      }
+
+      if (url.pathname === "/api/config") {
+        return await handleGetConfig(env);
+      }
+
+      if (url.pathname === "/admin/config" && request.method === "POST") {
+        return await handleSaveConfig(request, env);
       }
 
       if (url.pathname.startsWith("/admin/data/") && request.method === "DELETE") {

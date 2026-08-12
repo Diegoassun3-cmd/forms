@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Candidaturas — Solua Imóveis</title>
+  <title>Painel — Solua Imóveis</title>
   <meta name="theme-color" content="#024ba5" />
   <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
   <link rel="stylesheet" href="/styles.css" />
@@ -15,6 +15,17 @@
     .admin__gate { max-width: 360px; margin: 60px auto; text-align: center; }
     .admin__gate input { width: 100%; margin-bottom: 12px; }
     .admin__count { color: var(--texto-suave); font-size: 0.9rem; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1.5px solid var(--creme-escuro); }
+    .tab-btn {
+      background: none; border: none; padding: 10px 4px; margin-bottom: -1.5px;
+      font-family: inherit; font-weight: 700; font-size: 0.95rem; color: var(--texto-suave);
+      cursor: pointer; border-bottom: 2.5px solid transparent;
+    }
+    .tab-btn.is-active { color: var(--azul); border-bottom-color: var(--azul); }
+    .tab-panel { display: none; }
+    .tab-panel.is-active { display: block; }
+
     table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
     thead th {
       text-align: left; background: var(--azul-tint); color: var(--azul-escuro);
@@ -26,6 +37,8 @@
     .cell-wrap { max-width: 260px; white-space: pre-wrap; }
     .error-msg { color: var(--erro); margin-top: 10px; font-size: 0.9rem; display: none; }
     .error-msg.is-visible { display: block; }
+    .success-msg { color: var(--azul); margin-top: 10px; font-size: 0.9rem; display: none; }
+    .success-msg.is-visible { display: block; }
     .toolbar { display: flex; gap: 10px; }
     .btn-small { padding: 10px 18px; font-size: 0.9rem; }
     .btn-delete {
@@ -35,52 +48,154 @@
     }
     .btn-delete:hover { background: rgba(194, 59, 46, 0.08); }
     .btn-delete:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .settings-section { max-width: 640px; margin-bottom: 32px; }
+    .settings-section h2 { font-size: 1.05rem; font-weight: 900; color: var(--texto); margin: 0 0 4px; }
+    .settings-section .field__hint { margin-bottom: 16px; }
+    .settings-row { display: flex; gap: 16px; }
+    .settings-row .field { flex: 1; }
+    .settings-select {
+      width: 100%; border: 1.5px solid var(--creme-escuro); border-radius: 10px;
+      padding: 13px 14px; font-size: 1rem; font-family: inherit; color: var(--texto); background: var(--branco);
+    }
+
+    .extra-q {
+      border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px; margin-bottom: 12px;
+    }
+    .extra-q__row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .extra-q-label { flex: 1; min-width: 160px; }
+    .extra-q-type { width: auto; min-width: 150px; }
+    .extra-q__required { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--texto-suave); white-space: nowrap; }
+    .extra-q-options { width: 100%; margin-top: 4px; min-height: 60px; }
+    .btn-add-question {
+      background: none; border: 1.5px dashed var(--azul); color: var(--azul);
+      border-radius: 10px; padding: 12px; width: 100%; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-add-question:hover { background: var(--azul-tint); }
   </style>
 </head>
 <body>
   <div id="admin">
     <div class="admin__gate" id="gate">
       <h1 class="admin__title" style="margin-bottom: 8px;">Área restrita</h1>
-      <p class="field__hint" style="margin-bottom: 16px;">Informe o token de administrador para ver as candidaturas recebidas.</p>
+      <p class="field__hint" style="margin-bottom: 16px;">Informe o token de administrador para entrar.</p>
       <input type="password" id="token-input" placeholder="Token de administrador" autofocus />
       <button class="btn btn-primary btn-small" id="btn-enter" type="button" style="width:100%;">Entrar</button>
       <p class="error-msg" id="gate-error">Token inválido.</p>
     </div>
 
     <div id="content" class="hidden">
-      <div class="admin__header">
-        <h1 class="admin__title">Candidaturas recebidas</h1>
-        <div class="toolbar">
-          <span class="admin__count" id="count"></span>
-          <button class="btn btn-ghost btn-small" id="btn-refresh" type="button">Atualizar</button>
-          <button class="btn btn-primary btn-small" id="btn-csv" type="button">Exportar CSV</button>
+      <div class="tabs">
+        <button class="tab-btn is-active" type="button" data-tab="candidaturas">Candidaturas</button>
+        <button class="tab-btn" type="button" data-tab="config">Configurações</button>
+      </div>
+
+      <!-- ===================== ABA: CANDIDATURAS ===================== -->
+      <div class="tab-panel is-active" id="tab-candidaturas">
+        <div class="admin__header">
+          <h1 class="admin__title">Candidaturas recebidas</h1>
+          <div class="toolbar">
+            <span class="admin__count" id="count"></span>
+            <button class="btn btn-ghost btn-small" id="btn-refresh" type="button">Atualizar</button>
+            <button class="btn btn-primary btn-small" id="btn-csv" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>WhatsApp</th>
+                <th>Cidade/Estado</th>
+                <th>CRECI</th>
+                <th>Experiência</th>
+                <th>Captação</th>
+                <th>Regiões</th>
+                <th>Tipos de imóvel</th>
+                <th>Disponibilidade</th>
+                <th>Veículo</th>
+                <th>Portfólio</th>
+                <th>Remuneração</th>
+                <th>Sobre você</th>
+                <th>LGPD</th>
+                <th>Perguntas extras</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
         </div>
       </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Nome</th>
-              <th>E-mail</th>
-              <th>WhatsApp</th>
-              <th>Cidade/Estado</th>
-              <th>CRECI</th>
-              <th>Experiência</th>
-              <th>Captação</th>
-              <th>Regiões</th>
-              <th>Tipos de imóvel</th>
-              <th>Disponibilidade</th>
-              <th>Veículo</th>
-              <th>Portfólio</th>
-              <th>Remuneração</th>
-              <th>Sobre você</th>
-              <th>LGPD</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody id="rows"></tbody>
-        </table>
+
+      <!-- ===================== ABA: CONFIGURAÇÕES ===================== -->
+      <div class="tab-panel" id="tab-config">
+        <h1 class="admin__title" style="margin-bottom: 20px;">Configurações do site</h1>
+
+        <div class="settings-section">
+          <h2>Capa</h2>
+          <p class="field__hint">Foto usada na tela inicial e na de agradecimento.</p>
+          <div class="field">
+            <label class="field__label" for="cfg-capa-image">URL da imagem</label>
+            <input type="text" id="cfg-capa-image" placeholder="https://..." />
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-capa-position">Posição da imagem</label>
+            <select class="settings-select" id="cfg-capa-position">
+              <option value="top">Topo</option>
+              <option value="center">Centro</option>
+              <option value="bottom">Base</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Tela inicial</h2>
+          <div class="field">
+            <label class="field__label" for="cfg-landing-title">Título</label>
+            <input type="text" id="cfg-landing-title" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-landing-title-size">Tamanho do título</label>
+            <select class="settings-select" id="cfg-landing-title-size">
+              <option value="small">Pequeno</option>
+              <option value="normal">Normal</option>
+              <option value="large">Grande</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-landing-subtitle">Subtítulo</label>
+            <textarea id="cfg-landing-subtitle" rows="3"></textarea>
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-landing-button">Texto do botão</label>
+            <input type="text" id="cfg-landing-button" />
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Tela de agradecimento</h2>
+          <div class="field">
+            <label class="field__label" for="cfg-thanks-title">Título</label>
+            <input type="text" id="cfg-thanks-title" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-thanks-message">Mensagem</label>
+            <textarea id="cfg-thanks-message" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Perguntas extras</h2>
+          <p class="field__hint">Aparecem como uma etapa nova no formulário, depois das perguntas padrão.</p>
+          <div id="extra-questions-editor"></div>
+          <button class="btn-add-question" type="button" id="btn-add-question">+ Adicionar pergunta</button>
+        </div>
+
+        <button class="btn btn-primary" id="btn-save-config" type="button">Salvar configurações</button>
+        <p class="error-msg" id="config-error"></p>
+        <p class="success-msg" id="config-success">Salvo!</p>
       </div>
     </div>
   </div>
@@ -88,6 +203,31 @@
   <script>
     const STORAGE_KEY = "solua_admin_token";
     let currentRows = [];
+    let extraQuestionsDraft = [];
+
+    // Valores padrão exibidos enquanto nada foi salvo em Configurações ainda
+    // (mesmos valores hoje fixos em public/app.js).
+    const DEFAULT_CONFIG = {
+      capa: {
+        image: "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600",
+        position: "center",
+      },
+      landing: {
+        title: "Vagas para corretores (as)",
+        titleSize: "normal",
+        subtitle:
+          "Leva menos de 5 minutos. Conte um pouco sobre sua experiência e a forma como você atua " +
+          "no mercado imobiliário para darmos início à conversa.",
+        buttonLabel: "Iniciar",
+      },
+      thanks: {
+        title: "Recebemos sua candidatura!",
+        message:
+          "Obrigado por dedicar seu tempo. Nosso time vai analisar suas respostas e entrar em " +
+          "contato pelo WhatsApp informado em breve.",
+      },
+      extraQuestions: [],
+    };
 
     function fmtDate(iso) {
       try {
@@ -101,6 +241,18 @@
       const div = document.createElement("div");
       div.textContent = value == null ? "" : String(value);
       return div.innerHTML;
+    }
+
+    function fmtExtraRespostas(json) {
+      if (!json) return "";
+      try {
+        const obj = JSON.parse(json);
+        return Object.entries(obj)
+          .map(([label, valor]) => `${label}: ${valor}`)
+          .join("\n");
+      } catch {
+        return "";
+      }
     }
 
     function renderRows(rows) {
@@ -125,6 +277,7 @@
             <td class="cell-wrap">${esc(r.remuneracao)}</td>
             <td class="cell-wrap">${esc(r.sobre_voce)}</td>
             <td>${esc(r.lgpd)}</td>
+            <td class="cell-wrap">${esc(fmtExtraRespostas(r.extra_respostas))}</td>
             <td><button class="btn-delete" type="button" data-delete-id="${esc(r.id)}">Excluir</button></td>
           </tr>`
         )
@@ -166,6 +319,153 @@
       }
     }
 
+    function toCsv(rows) {
+      const headers = [
+        "criado_em", "nome", "email", "whatsapp", "cidade", "creci", "experiencia",
+        "captacao", "regioes", "tipos_imovel", "disponibilidade", "veiculo",
+        "portfolio", "remuneracao", "sobre_voce", "lgpd", "extra_respostas",
+      ];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    // ---------------------------------------------------------------
+    // Configurações
+    // ---------------------------------------------------------------
+
+    function renderExtraQuestionsEditor() {
+      const container = document.getElementById("extra-questions-editor");
+      if (!extraQuestionsDraft.length) {
+        container.innerHTML = '<p class="field__hint">Nenhuma pergunta extra ainda.</p>';
+        return;
+      }
+      container.innerHTML = extraQuestionsDraft
+        .map(
+          (q, i) => `
+        <div class="extra-q" data-index="${i}">
+          <div class="extra-q__row">
+            <input type="text" class="extra-q-label" placeholder="Pergunta" value="${esc(q.label)}" />
+            <select class="extra-q-type settings-select">
+              <option value="texto" ${q.type === "texto" ? "selected" : ""}>Texto curto</option>
+              <option value="textarea" ${q.type === "textarea" ? "selected" : ""}>Texto longo</option>
+              <option value="escolha" ${q.type === "escolha" ? "selected" : ""}>Múltipla escolha</option>
+            </select>
+            <label class="extra-q__required">
+              <input type="checkbox" class="extra-q-required" ${q.required ? "checked" : ""} /> Obrigatória
+            </label>
+            <button type="button" class="btn-delete extra-q-remove">Remover</button>
+          </div>
+          <textarea
+            class="extra-q-options"
+            placeholder="Uma opção por linha"
+            style="${q.type === "escolha" ? "" : "display:none;"}"
+          >${esc((q.options || []).join("\n"))}</textarea>
+        </div>`
+        )
+        .join("");
+    }
+
+    function addExtraQuestion() {
+      extraQuestionsDraft.push({ label: "", type: "texto", options: [], required: false });
+      renderExtraQuestionsEditor();
+    }
+
+    function applyConfigToForm(cfg) {
+      document.getElementById("cfg-capa-image").value = cfg.capa.image || "";
+      document.getElementById("cfg-capa-position").value = cfg.capa.position || "center";
+      document.getElementById("cfg-landing-title").value = cfg.landing.title || "";
+      document.getElementById("cfg-landing-title-size").value = cfg.landing.titleSize || "normal";
+      document.getElementById("cfg-landing-subtitle").value = cfg.landing.subtitle || "";
+      document.getElementById("cfg-landing-button").value = cfg.landing.buttonLabel || "";
+      document.getElementById("cfg-thanks-title").value = cfg.thanks.title || "";
+      document.getElementById("cfg-thanks-message").value = cfg.thanks.message || "";
+      extraQuestionsDraft = (cfg.extraQuestions || []).map((q) => ({ ...q }));
+      renderExtraQuestionsEditor();
+    }
+
+    async function loadConfigIntoForm() {
+      try {
+        const res = await fetch("/api/config");
+        const data = await res.json();
+        applyConfigToForm(data.config || DEFAULT_CONFIG);
+      } catch {
+        applyConfigToForm(DEFAULT_CONFIG);
+      }
+    }
+
+    function collectConfigFromForm() {
+      // garante que a última edição em cada campo de pergunta extra está no draft
+      document.querySelectorAll(".extra-q").forEach((el) => {
+        const i = Number(el.dataset.index);
+        extraQuestionsDraft[i].label = el.querySelector(".extra-q-label").value;
+        extraQuestionsDraft[i].type = el.querySelector(".extra-q-type").value;
+        extraQuestionsDraft[i].required = el.querySelector(".extra-q-required").checked;
+        extraQuestionsDraft[i].options = el
+          .querySelector(".extra-q-options")
+          .value.split("\n")
+          .map((s) => s.trim())
+          .filter(Boolean);
+      });
+
+      return {
+        capa: {
+          image: document.getElementById("cfg-capa-image").value.trim(),
+          position: document.getElementById("cfg-capa-position").value,
+        },
+        landing: {
+          title: document.getElementById("cfg-landing-title").value.trim(),
+          titleSize: document.getElementById("cfg-landing-title-size").value,
+          subtitle: document.getElementById("cfg-landing-subtitle").value.trim(),
+          buttonLabel: document.getElementById("cfg-landing-button").value.trim(),
+        },
+        thanks: {
+          title: document.getElementById("cfg-thanks-title").value.trim(),
+          message: document.getElementById("cfg-thanks-message").value.trim(),
+        },
+        extraQuestions: extraQuestionsDraft,
+      };
+    }
+
+    async function saveConfig() {
+      const btn = document.getElementById("btn-save-config");
+      const errorEl = document.getElementById("config-error");
+      const successEl = document.getElementById("config-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      const payload = collectConfigFromForm();
+
+      btn.disabled = true;
+      btn.textContent = "Salvando…";
+
+      try {
+        const res = await fetch("/admin/config", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-admin-token": token },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Não foi possível salvar.");
+        }
+        applyConfigToForm(data.config);
+        successEl.classList.add("is-visible");
+      } catch (err) {
+        errorEl.textContent = err.message || "Erro ao salvar.";
+        errorEl.classList.add("is-visible");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Salvar configurações";
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Login / navegação
+    // ---------------------------------------------------------------
+
     async function tryEnter(token) {
       const errorEl = document.getElementById("gate-error");
       errorEl.classList.remove("is-visible");
@@ -175,22 +475,11 @@
         document.getElementById("gate").classList.add("hidden");
         document.getElementById("content").classList.remove("hidden");
         renderRows(rows);
+        loadConfigIntoForm();
       } catch (err) {
         errorEl.textContent = err.message;
         errorEl.classList.add("is-visible");
       }
-    }
-
-    function toCsv(rows) {
-      const headers = [
-        "criado_em", "nome", "email", "whatsapp", "cidade", "creci", "experiencia",
-        "captacao", "regioes", "tipos_imovel", "disponibilidade", "veiculo",
-        "portfolio", "remuneracao", "sobre_voce", "lgpd",
-      ];
-      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-      const lines = [headers.join(",")];
-      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
-      return lines.join("\r\n");
     }
 
     document.getElementById("btn-enter").addEventListener("click", () => {
@@ -219,6 +508,35 @@
       link.download = "candidaturas-solua.csv";
       link.click();
     });
+
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
+        document.querySelectorAll(".tab-panel").forEach((p) => {
+          p.classList.toggle("is-active", p.id === "tab-" + btn.dataset.tab);
+        });
+      });
+    });
+
+    document.getElementById("btn-add-question").addEventListener("click", addExtraQuestion);
+
+    document.getElementById("extra-questions-editor").addEventListener("click", (e) => {
+      const removeBtn = e.target.closest(".extra-q-remove");
+      if (!removeBtn) return;
+      const i = Number(removeBtn.closest(".extra-q").dataset.index);
+      collectConfigFromForm(); // sincroniza edições pendentes antes de remover
+      extraQuestionsDraft.splice(i, 1);
+      renderExtraQuestionsEditor();
+    });
+
+    document.getElementById("extra-questions-editor").addEventListener("change", (e) => {
+      if (e.target.classList.contains("extra-q-type")) {
+        const optionsEl = e.target.closest(".extra-q").querySelector(".extra-q-options");
+        optionsEl.style.display = e.target.value === "escolha" ? "" : "none";
+      }
+    });
+
+    document.getElementById("btn-save-config").addEventListener("click", saveConfig);
 
     // reentra sozinho se já tiver token salvo nesta aba
     const savedToken = sessionStorage.getItem(STORAGE_KEY);

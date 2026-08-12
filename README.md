@@ -20,19 +20,15 @@ wrangler.jsonc   → configuração do Worker (nome, assets, binding do D1)
 dashboard-worker.js → mesmo Worker em arquivo único, para colar na aba "Edit code" do painel
 ```
 
-## Personalizar textos e fotos
+## Personalizar textos, capa e perguntas — sem mexer em código
 
-Edite o objeto `CONFIG` no topo de `public/app.js`:
+A forma recomendada é pela aba **Configurações** dentro do `/admin` (veja a seção "Dados" abaixo):
+título/subtítulo/botão da tela inicial, tamanho do título, capa (URL + posição), texto de
+agradecimento e perguntas extras (texto curto, texto longo ou múltipla escolha) — tudo fica salvo no
+banco D1 (tabela `site_config`) e o site aplica na hora, sem precisar publicar de novo.
 
-```js
-const CONFIG = {
-  landing: { image: "/images/placeholder.svg", eyebrow: "...", title: "...", subtitle: "...", buttonLabel: "Iniciar" },
-  thanks:  { image: "/images/placeholder.svg", title: "...", message: "..." },
-};
-```
-
-Para trocar as fotos, coloque o arquivo (jpg/png) dentro de `public/images/` e aponte `image` para o
-novo caminho, ex. `"/images/foto-equipe.jpg"`.
+O objeto `CONFIG` no topo de `public/app.js` só é usado como **valor padrão** enquanto nada foi salvo
+em Configurações ainda (ou se o banco estiver fora do ar).
 
 ## Rodar localmente
 
@@ -68,7 +64,9 @@ Cada envio é validado no servidor (`src/index.js`) e gravado na tabela `candida
 Duas formas de consultar as respostas:
 
 1. **Painel `/admin`** (recomendado): abra `https://<seu-worker>/admin`, informe o token de
-   administrador e veja todas as candidaturas numa tabela, com botão para exportar CSV.
+   administrador. Duas abas:
+   - **Candidaturas**: tabela com todas as respostas, exportação em CSV e botão de excluir por linha.
+   - **Configurações**: editar textos, capa e perguntas extras do formulário (salva no D1, aplica na hora).
    - Configure o token em **Settings → Variables and Secrets → Add** → tipo *Secret* → variable name
      `ADMIN_TOKEN` → valor: uma senha à sua escolha. Sem isso o `/admin` fica bloqueado (401).
 2. **Direto no D1**: painel Cloudflare → **Workers & Pages → D1 → solua-candidaturas → Console**,
