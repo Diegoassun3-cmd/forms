@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Candidaturas — Solua Imóveis</title>
+  <meta name="theme-color" content="#024ba5" />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    body { justify-content: center; align-items: flex-start; padding: 32px 16px; }
+    #admin { width: 100%; max-width: 1200px; background: var(--branco); border-radius: 14px; box-shadow: 0 0 40px rgba(2,75,165,0.08); padding: 28px; }
+    .admin__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .admin__title { font-size: 1.4rem; font-weight: 900; color: var(--texto); margin: 0; }
+    .admin__gate { max-width: 360px; margin: 60px auto; text-align: center; }
+    .admin__gate input { width: 100%; margin-bottom: 12px; }
+    .admin__count { color: var(--texto-suave); font-size: 0.9rem; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    thead th {
+      text-align: left; background: var(--azul-tint); color: var(--azul-escuro);
+      padding: 10px 12px; position: sticky; top: 0; white-space: nowrap; font-weight: 700;
+    }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--creme-escuro); vertical-align: top; }
+    tbody tr:hover { background: var(--creme); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--creme-escuro); border-radius: 10px; }
+    .cell-wrap { max-width: 260px; white-space: pre-wrap; }
+    .error-msg { color: var(--erro); margin-top: 10px; font-size: 0.9rem; display: none; }
+    .error-msg.is-visible { display: block; }
+    .toolbar { display: flex; gap: 10px; }
+    .btn-small { padding: 10px 18px; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <div id="admin">
+    <div class="admin__gate" id="gate">
+      <h1 class="admin__title" style="margin-bottom: 8px;">Área restrita</h1>
+      <p class="field__hint" style="margin-bottom: 16px;">Informe o token de administrador para ver as candidaturas recebidas.</p>
+      <input type="password" id="token-input" placeholder="Token de administrador" autofocus />
+      <button class="btn btn-primary btn-small" id="btn-enter" type="button" style="width:100%;">Entrar</button>
+      <p class="error-msg" id="gate-error">Token inválido.</p>
+    </div>
+
+    <div id="content" class="hidden">
+      <div class="admin__header">
+        <h1 class="admin__title">Candidaturas recebidas</h1>
+        <div class="toolbar">
+          <span class="admin__count" id="count"></span>
+          <button class="btn btn-ghost btn-small" id="btn-refresh" type="button">Atualizar</button>
+          <button class="btn btn-primary btn-small" id="btn-csv" type="button">Exportar CSV</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Nome</th>
+              <th>E-mail</th>
+              <th>WhatsApp</th>
+              <th>Cidade/Estado</th>
+              <th>CRECI</th>
+              <th>Experiência</th>
+              <th>Captação</th>
+              <th>Regiões</th>
+              <th>Tipos de imóvel</th>
+              <th>Disponibilidade</th>
+              <th>Veículo</th>
+              <th>Portfólio</th>
+              <th>Remuneração</th>
+              <th>Sobre você</th>
+              <th>LGPD</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "solua_admin_token";
+    let currentRows = [];
+
+    function fmtDate(iso) {
+      try {
+        return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+      } catch {
+        return iso;
+      }
+    }
+
+    function esc(value) {
+      const div = document.createElement("div");
+      div.textContent = value == null ? "" : String(value);
+      return div.innerHTML;
+    }
+
+    function renderRows(rows) {
+      currentRows = rows;
+      document.getElementById("count").textContent = rows.length + " candidatura(s)";
+      document.getElementById("rows").innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${esc(fmtDate(r.criado_em))}</td>
+            <td>${esc(r.nome)}</td>
+            <td>${esc(r.email)}</td>
+            <td>${esc(r.whatsapp)}</td>
+            <td>${esc(r.cidade)}</td>
+            <td>${esc(r.creci)}</td>
+            <td>${esc(r.experiencia)}</td>
+            <td class="cell-wrap">${esc(r.captacao)}</td>
+            <td class="cell-wrap">${esc(r.regioes)}</td>
+            <td>${esc(r.tipos_imovel)}</td>
+            <td>${esc(r.disponibilidade)}</td>
+            <td>${esc(r.veiculo)}</td>
+            <td class="cell-wrap">${esc(r.portfolio)}</td>
+            <td class="cell-wrap">${esc(r.remuneracao)}</td>
+            <td class="cell-wrap">${esc(r.sobre_voce)}</td>
+            <td>${esc(r.lgpd)}</td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function loadData(token) {
+      const res = await fetch("/admin/data", { headers: { "x-admin-token": token } });
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar dados.");
+      }
+      const data = await res.json();
+      return data.rows || [];
+    }
+
+    async function tryEnter(token) {
+      const errorEl = document.getElementById("gate-error");
+      errorEl.classList.remove("is-visible");
+      try {
+        const rows = await loadData(token);
+        sessionStorage.setItem(STORAGE_KEY, token);
+        document.getElementById("gate").classList.add("hidden");
+        document.getElementById("content").classList.remove("hidden");
+        renderRows(rows);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    function toCsv(rows) {
+      const headers = [
+        "criado_em", "nome", "email", "whatsapp", "cidade", "creci", "experiencia",
+        "captacao", "regioes", "tipos_imovel", "disponibilidade", "veiculo",
+        "portfolio", "remuneracao", "sobre_voce", "lgpd",
+      ];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    document.getElementById("btn-enter").addEventListener("click", () => {
+      const token = document.getElementById("token-input").value.trim();
+      if (token) tryEnter(token);
+    });
+
+    document.getElementById("token-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("btn-enter").click();
+    });
+
+    document.getElementById("btn-refresh").addEventListener("click", async () => {
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      if (token) renderRows(await loadData(token));
+    });
+
+    document.getElementById("btn-csv").addEventListener("click", () => {
+      const blob = new Blob([toCsv(currentRows)], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "candidaturas-solua.csv";
+      link.click();
+    });
+
+    // reentra sozinho se já tiver token salvo nesta aba
+    const savedToken = sessionStorage.getItem(STORAGE_KEY);
+    if (savedToken) tryEnter(savedToken);
+  </script>
+</body>
+</html>

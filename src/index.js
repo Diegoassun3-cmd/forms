@@ -101,6 +101,20 @@ async function handleSubmit(request, env) {
   return jsonResponse({ ok: true });
 }
 
+/** Lista as candidaturas para a área administrativa (protegida por token). */
+async function handleAdminData(request, env) {
+  const token = request.headers.get("x-admin-token") || "";
+  if (!env.ADMIN_TOKEN || token !== env.ADMIN_TOKEN) {
+    return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  }
+
+  const { results } = await env.DB.prepare(
+    "SELECT * FROM candidaturas ORDER BY criado_em DESC"
+  ).all();
+
+  return jsonResponse({ ok: true, rows: results });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -111,6 +125,14 @@ export default {
 
     if (url.pathname === "/api/submit") {
       return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
+    }
+
+    if (url.pathname === "/admin/data") {
+      return handleAdminData(request, env);
+    }
+
+    if (url.pathname === "/admin") {
+      return env.ASSETS.fetch(new Request(new URL("/admin.html", request.url), request));
     }
 
     return env.ASSETS.fetch(request);
