@@ -145,7 +145,8 @@ function str(value, max) {
 /** Valida e normaliza a configuração recebida do painel admin antes de salvar. */
 const QUESTION_TYPES = ["texto", "textarea", "escolha", "checkbox", "simnao"];
 const QUESTION_TYPES_WITH_OPTIONS = ["escolha", "checkbox"];
-const LOGO_POSITIONS = ["top-left", "top-center", "top-right", "bottom-left", "bottom-right"];
+const LOGO_POSITIONS = ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"];
+const LOGO_SIZES = ["pequeno", "medio", "grande"];
 const TEXT_ALIGNS = ["left", "center", "right"];
 const TEXT_POSITIONS = ["top", "center", "bottom"];
 
@@ -191,6 +192,7 @@ function sanitizeConfig(input) {
     logo: {
       image: str(logo.image, 2000000), // aceita arquivo enviado (data URI), não só link
       position: LOGO_POSITIONS.includes(logo.position) ? logo.position : "top-left",
+      size: LOGO_SIZES.includes(logo.size) ? logo.size : "medio",
     },
     landing: {
       title: str(landing.title, 200),

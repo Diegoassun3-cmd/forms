@@ -88,8 +88,15 @@ body {
 .brand-logo--top-left { top: 20px; left: 20px; }
 .brand-logo--top-center { top: 20px; left: 50%; transform: translateX(-50%); }
 .brand-logo--top-right { top: 20px; right: 20px; }
+.brand-logo--center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
 .brand-logo--bottom-left { bottom: 20px; left: 20px; }
 .brand-logo--bottom-right { bottom: 20px; right: 20px; }
+
+/* tamanho da logo (a posição "centro" usa transform pra centralizar, então o
+   tamanho não pode mexer no transform — só no max-width/max-height mesmo) */
+.brand-logo--size-pequeno { max-width: 90px; max-height: 36px; }
+.brand-logo--size-medio { max-width: 140px; max-height: 56px; }
+.brand-logo--size-grande { max-width: 220px; max-height: 88px; }
 
 .hero__content {
   position: relative;
@@ -426,8 +433,8 @@ body {
   align-items: center;
   gap: 8px;
   margin-top: 8px;
-  background: #25d366;
-  color: #06301c;
+  background: var(--creme);
+  color: var(--azul-escuro);
   text-decoration: none;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }

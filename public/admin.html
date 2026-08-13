@@ -265,8 +265,17 @@
               <option value="top-left">Superior esquerda</option>
               <option value="top-center">Superior centro</option>
               <option value="top-right">Superior direita</option>
+              <option value="center">Centro</option>
               <option value="bottom-left">Inferior esquerda</option>
               <option value="bottom-right">Inferior direita</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-logo-size">Tamanho da logo</label>
+            <select class="settings-select" id="cfg-logo-size">
+              <option value="pequeno">Pequeno</option>
+              <option value="medio">Médio</option>
+              <option value="grande">Grande</option>
             </select>
           </div>
         </div>
@@ -398,6 +407,7 @@
       logo: {
         image: "",
         position: "top-left",
+        size: "medio",
       },
       landing: {
         title: "Vagas para corretores (as)",
@@ -744,6 +754,7 @@
       setImagePreview(document.getElementById("cfg-logo-preview"), cfg.logo.image || "");
       document.getElementById("cfg-logo-status").textContent = "";
       document.getElementById("cfg-logo-position").value = cfg.logo.position || "top-left";
+      document.getElementById("cfg-logo-size").value = cfg.logo.size || "medio";
       document.getElementById("cfg-landing-title").value = cfg.landing.title || "";
       document.getElementById("cfg-landing-title-size").value = cfg.landing.titleSize || "normal";
       document.getElementById("cfg-landing-subtitle").value = cfg.landing.subtitle || "";
@@ -786,6 +797,7 @@
         logo: {
           image: document.getElementById("cfg-logo-preview").getAttribute("src") || "",
           position: document.getElementById("cfg-logo-position").value,
+          size: document.getElementById("cfg-logo-size").value,
         },
         landing: {
           title: document.getElementById("cfg-landing-title").value.trim(),

@@ -69,11 +69,12 @@ Duas formas de consultar as respostas:
    - **Candidaturas**: tabela com todas as respostas, exportação em CSV e botão de excluir por linha.
    - **Páginas**: lista de todas as páginas do formulário, na ordem em que aparecem.
    - **Configurações**: capa (upload de arquivo direto, com redimensionamento/compressão
-     automáticos, posição e gradiente), logo (upload de arquivo + posição), textos e
-     alinhamento/posição do texto na tela inicial e de agradecimento, botão de WhatsApp na tela de
-     agradecimento, e páginas extras — cada uma com suas próprias perguntas (texto curto, texto
-     longo, múltipla escolha de uma ou várias opções, ou sim/não), reordenáveis com as setas ↑/↓.
-     Tudo salvo no D1 e aplicado na hora.
+     automáticos, posição e gradiente), logo (upload de arquivo, posição — incluindo centro — e
+     tamanho pequeno/médio/grande), textos e alinhamento/posição do texto na tela inicial e de
+     agradecimento, botão de WhatsApp na tela de agradecimento (segue a paleta de cor do site), e
+     páginas extras — cada uma com suas próprias perguntas (texto curto, texto longo, múltipla
+     escolha de uma ou várias opções, ou sim/não), reordenáveis com as setas ↑/↓. Tudo salvo no D1
+     e aplicado na hora.
    - **Páginas**: visão geral de todas as páginas do formulário na ordem em que aparecem; as
      páginas extras podem ser reordenadas arrastando pelo ícone ⠿ (funciona com mouse e touch) —
      basta soltar na posição desejada e clicar em "Salvar ordem".

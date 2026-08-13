@@ -19,6 +19,7 @@ const CONFIG = {
   logo: {
     image: "",
     position: "top-left",
+    size: "medio",
   },
   landing: {
     title: "Vagas para corretores (as)",
@@ -99,7 +100,8 @@ function setTextPosition(el, position) {
   el.classList.add(`text-pos-${["top", "center", "bottom"].includes(position) ? position : "bottom"}`);
 }
 
-const LOGO_POSITIONS = ["top-left", "top-center", "top-right", "bottom-left", "bottom-right"];
+const LOGO_POSITIONS = ["top-left", "top-center", "top-right", "center", "bottom-left", "bottom-right"];
+const LOGO_SIZES = ["pequeno", "medio", "grande"];
 
 function applyLogo(imgEl, cfg) {
   const hasLogo = Boolean(cfg.logo && cfg.logo.image);
@@ -110,6 +112,10 @@ function applyLogo(imgEl, cfg) {
   LOGO_POSITIONS.forEach((pos) => imgEl.classList.remove(`brand-logo--${pos}`));
   const position = LOGO_POSITIONS.includes(cfg.logo.position) ? cfg.logo.position : "top-left";
   imgEl.classList.add(`brand-logo--${position}`);
+
+  LOGO_SIZES.forEach((size) => imgEl.classList.remove(`brand-logo--size-${size}`));
+  const size = LOGO_SIZES.includes(cfg.logo.size) ? cfg.logo.size : "medio";
+  imgEl.classList.add(`brand-logo--size-${size}`);
 }
 
 function applyWhatsappButton(cfg) {
