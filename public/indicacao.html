@@ -45,6 +45,7 @@
         <span class="step__eyebrow">01</span>
         <h2 class="step__title">O que você quer indicar?</h2>
         <p class="step__desc">Qual oportunidade você tem para indicar? Selecione uma opção.</p>
+        <p class="field__hint hidden" id="indicacoes-progress-hint"></p>
 
         <div class="field">
           <div class="options" data-name="tipo" data-error="Selecione uma opção.">
@@ -295,6 +296,13 @@
             </span>
             <textarea id="detalhesConsorcio" name="detalhesConsorcio" rows="3"></textarea>
           </div>
+        </div>
+
+        <!-- indicar mais de uma pessoa/oportunidade no mesmo envio (até 5) -->
+        <div class="indicacoes-batch">
+          <p class="field__hint" id="indicacoes-batch-hint">Você pode indicar até 5 pessoas nesse envio.</p>
+          <ul class="indicacoes-batch__list" id="indicacoes-batch-list"></ul>
+          <button type="button" class="btn-add-item" id="btn-add-indicacao">+ Adicionar outra indicação</button>
         </div>
       </section>
 

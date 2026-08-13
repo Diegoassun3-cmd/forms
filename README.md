@@ -8,6 +8,8 @@ estáticos, gravando cada resposta em tabelas próprias no banco D1.
 - **Indicações** (`/indicacao`) — indicação de imóvel, seguro ou consórcio: 5 etapas, com a etapa
   "sobre a oportunidade" condicional — só mostra as perguntas do tipo escolhido no início (imóvel,
   seguro ou consórcio), sem obrigar quem indica a passar por perguntas que não fazem sentido pra ele.
+  Dá pra indicar mais de uma pessoa/oportunidade no mesmo envio (até 5) — o botão "+ Adicionar outra
+  indicação", ao final da etapa 3, guarda a indicação atual e limpa os campos pra receber a próxima.
 
 ## Estrutura
 

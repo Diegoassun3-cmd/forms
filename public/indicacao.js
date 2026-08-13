@@ -52,6 +52,12 @@ const BASE_STEPS = 5;
 let TOTAL_STEPS = BASE_STEPS;
 let extraPages = [];
 
+// Dá pra indicar mais de uma pessoa/oportunidade no mesmo envio (até MAX_INDICACOES). As etapas
+// 1-3 preenchem uma indicação por vez; "+ Adicionar outra indicação" guarda a atual e limpa os
+// campos pra receber a próxima, sem perder o que já foi preenchido.
+const MAX_INDICACOES = 5;
+let indicacoesBatch = [];
+
 /** Mescla a configuração salva no banco (se houver) por cima dos padrões locais. */
 function mergeConfig(saved) {
   if (!saved || typeof saved !== "object") return CONFIG;
@@ -302,6 +308,119 @@ function updateConditionalGroup(tipo) {
   if (titleEl) titleEl.textContent = TITLE_BY_TIPO[tipo] || "Conte um pouco sobre a oportunidade";
 }
 
+/* ---------- lote de indicações (até MAX_INDICACOES por envio) ---------- */
+
+function collectCurrentIndicacao() {
+  const form = document.getElementById("form");
+  const fd = new FormData(form);
+  const tipo = fd.get("tipo") || "";
+  return {
+    tipo,
+    nomeIndicado: fd.get("nomeIndicado") || "",
+    whatsappIndicado: fd.get("whatsappIndicado") || "",
+    emailIndicado: fd.get("emailIndicado") || "",
+    comoConhece: fd.get("comoConhece") || "",
+    detalhes: collectDetalhes(fd, tipo),
+  };
+}
+
+/** Limpa os campos das etapas 1-3 pra receber uma nova indicação do zero. */
+function resetIndicacaoFields() {
+  const form = document.getElementById("form");
+  ["tipo", "comoConhece", "disponibilidadeImovel", "tipoImovel", "tipoSeguro", "tipoConsorcio"].forEach((name) => {
+    form.querySelectorAll(`input[name="${name}"]`).forEach((el) => {
+      el.checked = false;
+    });
+  });
+  [
+    "nomeIndicado", "whatsappIndicado", "emailIndicado", "cidadeBairro", "valorImovel",
+    "detalhesImovel", "detalhesSeguro", "valorConsorcio", "detalhesConsorcio",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  document
+    .querySelectorAll('.step[data-step="1"] .field, .step[data-step="2"] .field, .step[data-step="3"] .field')
+    .forEach((f) => f.classList.remove("has-error"));
+  updateConditionalGroup("");
+}
+
+/** Não há nada preenchido ainda pra essa indicação (nem tipo, nem nome, nem WhatsApp). */
+function currentDraftIsEmpty() {
+  const tipo = document.querySelector('input[name="tipo"]:checked');
+  const nome = document.getElementById("nomeIndicado").value.trim();
+  const whats = document.getElementById("whatsappIndicado").value.trim();
+  return !tipo && !nome && !whats;
+}
+
+// Índice, dentro do lote, da indicação que corresponde aos campos preenchidos agora nas etapas
+// 1-3 (-1 = ainda não foi adicionada). Assim, voltar da etapa 4 pra 3 sem editar nada não duplica
+// a indicação ao clicar em "Continuar" de novo — e editar um campo depois de voltar remove a
+// versão antiga do lote automaticamente, pra não ficar duas cópias divergentes da mesma pessoa.
+let draftBatchIndex = -1;
+
+function markDraftDirty() {
+  if (draftBatchIndex < 0) return;
+  indicacoesBatch.splice(draftBatchIndex, 1);
+  draftBatchIndex = -1;
+  renderIndicacoesBatch();
+}
+
+function renderIndicacoesBatch() {
+  const listEl = document.getElementById("indicacoes-batch-list");
+  const hintEl = document.getElementById("indicacoes-batch-hint");
+  const addBtn = document.getElementById("btn-add-indicacao");
+  const progressHint = document.getElementById("indicacoes-progress-hint");
+
+  listEl.innerHTML = indicacoesBatch
+    .map((item, i) => {
+      const tipoLabel = TITLE_BY_TIPO[item.tipo] ? TITLE_BY_TIPO[item.tipo].replace("Sobre o ", "").replace("Sobre a ", "") : item.tipo;
+      return `<li>
+        <span>${escapeHtml(tipoLabel)} — ${escapeHtml(item.nomeIndicado)}</span>
+        <button type="button" class="item-remove" data-remove-indicacao="${i}">Remover</button>
+      </li>`;
+    })
+    .join("");
+
+  const atMax = indicacoesBatch.length >= MAX_INDICACOES;
+  hintEl.textContent = indicacoesBatch.length
+    ? `${indicacoesBatch.length}/${MAX_INDICACOES} indicações adicionadas nesse envio.`
+    : `Você pode indicar até ${MAX_INDICACOES} pessoas nesse envio.`;
+  addBtn.disabled = atMax;
+  addBtn.textContent = atMax ? `Máximo de ${MAX_INDICACOES} indicações atingido` : "+ Adicionar outra indicação";
+
+  if (indicacoesBatch.length) {
+    progressHint.textContent = `Você já adicionou ${indicacoesBatch.length}/${MAX_INDICACOES} indicação(ões) nesse envio.`;
+    progressHint.classList.remove("hidden");
+  } else {
+    progressHint.classList.add("hidden");
+  }
+}
+
+/**
+ * Chamado ao sair da etapa 3 pelo botão "Continuar": se a indicação atual já estiver no lote (e
+ * nada mudou desde então), não faz nada. Se estiver vazia e já tiver pelo menos uma indicação no
+ * lote, também não há nada a fazer — a pessoa só quer seguir em frente com o que já adicionou.
+ * Caso contrário, valida e guarda a indicação atual no lote.
+ */
+function finalizeCurrentDraftIfNeeded() {
+  if (draftBatchIndex >= 0) {
+    return true;
+  }
+  if (currentDraftIsEmpty() && indicacoesBatch.length > 0) {
+    return true;
+  }
+  if (!validateStep(3)) {
+    return false;
+  }
+  if (indicacoesBatch.length < MAX_INDICACOES) {
+    indicacoesBatch.push(collectCurrentIndicacao());
+    draftBatchIndex = indicacoesBatch.length - 1;
+    renderIndicacoesBatch();
+  }
+  return true;
+}
+
 /** Valida a etapa atual; retorna true se pode avançar. */
 function validateStep(n) {
   let valid = true;
@@ -396,15 +515,9 @@ function collectDetalhes(fd, tipo) {
 function collectFormData() {
   const form = document.getElementById("form");
   const fd = new FormData(form);
-  const tipo = fd.get("tipo") || "";
 
   return {
-    tipo,
-    nomeIndicado: fd.get("nomeIndicado") || "",
-    whatsappIndicado: fd.get("whatsappIndicado") || "",
-    emailIndicado: fd.get("emailIndicado") || "",
-    comoConhece: fd.get("comoConhece") || "",
-    detalhes: collectDetalhes(fd, tipo),
+    indicacoes: indicacoesBatch,
     nomeIndicador: fd.get("nomeIndicador") || "",
     whatsappIndicador: fd.get("whatsappIndicador") || "",
     emailIndicador: fd.get("emailIndicador") || "",
@@ -479,6 +592,13 @@ async function init() {
   });
 
   document.getElementById("btn-next").addEventListener("click", async () => {
+    // etapa 3: guarda (ou não, se não houver nada de novo) a indicação atual no lote antes de seguir
+    if (currentStep === 3) {
+      if (!finalizeCurrentDraftIfNeeded()) return;
+      showStep(4);
+      return;
+    }
+
     if (!validateStep(currentStep)) return;
 
     if (currentStep < TOTAL_STEPS) {
@@ -487,6 +607,40 @@ async function init() {
       await submitForm();
     }
   });
+
+  document.getElementById("btn-add-indicacao").addEventListener("click", () => {
+    if (indicacoesBatch.length >= MAX_INDICACOES) return;
+    if (draftBatchIndex < 0) {
+      if (!validateStep(3)) return;
+      indicacoesBatch.push(collectCurrentIndicacao());
+    }
+    renderIndicacoesBatch();
+    resetIndicacaoFields();
+    draftBatchIndex = -1;
+    showStep(1);
+  });
+
+  document.getElementById("indicacoes-batch-list").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-remove-indicacao]");
+    if (!btn) return;
+    const idx = Number(btn.dataset.removeIndicacao);
+    indicacoesBatch.splice(idx, 1);
+    if (draftBatchIndex === idx) draftBatchIndex = -1;
+    else if (draftBatchIndex > idx) draftBatchIndex -= 1;
+    renderIndicacoesBatch();
+  });
+
+  // qualquer edição nas etapas 1-3 depois de já ter adicionado essa indicação ao lote a remove de
+  // lá — evita ficar uma cópia desatualizada enquanto a pessoa corrige um campo depois de voltar
+  ["input", "change"].forEach((evt) => {
+    document.getElementById("form").addEventListener(evt, (e) => {
+      if (e.target.closest('.step[data-step="1"], .step[data-step="2"], .step[data-step="3"]')) {
+        markDraftDirty();
+      }
+    });
+  });
+
+  renderIndicacoesBatch();
 
   // Enter não deve enviar o form prematuramente (exceto em textarea, que já quebra linha)
   document.getElementById("form").addEventListener("submit", (e) => e.preventDefault());

@@ -106,8 +106,35 @@ async function handleSubmit(request, env) {
 }
 
 const TIPOS_INDICACAO = ["imovel_venda", "imovel_locacao", "seguro", "consorcio"];
+const MAX_INDICACOES_POR_ENVIO = 5;
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/** Recebe uma indicação (formulário /indicacao) e grava na tabela `indicacoes`. */
+/** Valida uma indicação individual dentro do lote; retorna uma mensagem de erro ou null se ok. */
+function validarIndicacaoItem(item) {
+  if (!item || typeof item !== "object") return "Indicação inválida.";
+  if (!isNonEmptyString(item.tipo) || !TIPOS_INDICACAO.includes(item.tipo)) {
+    return "Tipo de indicação inválido.";
+  }
+  if (!isNonEmptyString(item.nomeIndicado) || !isNonEmptyString(item.whatsappIndicado)) {
+    return "Preencha o nome e o WhatsApp de cada pessoa indicada.";
+  }
+  if (isNonEmptyString(item.emailIndicado) && !EMAIL_RE.test(item.emailIndicado.trim())) {
+    return "E-mail de uma das pessoas indicadas é inválido.";
+  }
+  const detalhes = item.detalhes && typeof item.detalhes === "object" ? item.detalhes : {};
+  if (item.tipo === "imovel_venda" || item.tipo === "imovel_locacao") {
+    if (!isNonEmptyString(detalhes.cidadeBairro) || !isNonEmptyString(detalhes.tipoImovel)) {
+      return "Preencha as informações do imóvel.";
+    }
+  } else if (item.tipo === "seguro") {
+    if (!isNonEmptyString(detalhes.tipoSeguro)) return "Preencha as informações do seguro.";
+  } else if (item.tipo === "consorcio") {
+    if (!isNonEmptyString(detalhes.tipoConsorcio)) return "Preencha as informações do consórcio.";
+  }
+  return null;
+}
+
+/** Recebe até MAX_INDICACOES_POR_ENVIO indicações num só envio (formulário /indicacao) e grava uma linha por indicação na tabela `indicacoes`. */
 async function handleSubmitIndicacao(request, env) {
   let body;
   try {
@@ -116,15 +143,11 @@ async function handleSubmitIndicacao(request, env) {
     return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
   }
 
-  const requiredFields = ["tipo", "nomeIndicado", "whatsappIndicado", "nomeIndicador", "whatsappIndicador", "autorizaContato"];
+  const requiredFields = ["nomeIndicador", "whatsappIndicador", "autorizaContato"];
   for (const field of requiredFields) {
     if (!isNonEmptyString(body[field])) {
       return jsonResponse({ ok: false, error: `Campo obrigatório ausente: ${field}` }, 400);
     }
-  }
-
-  if (!TIPOS_INDICACAO.includes(body.tipo)) {
-    return jsonResponse({ ok: false, error: "Tipo de indicação inválido." }, 400);
   }
 
   const confirmaPermissao = String(body.confirmaPermissao || "").trim().toLowerCase();
@@ -139,56 +162,55 @@ async function handleSubmitIndicacao(request, env) {
     return jsonResponse({ ok: true }); // honeypot: finge sucesso, não grava
   }
 
-  const detalhes = body.detalhes && typeof body.detalhes === "object" ? body.detalhes : {};
-  if (body.tipo === "imovel_venda" || body.tipo === "imovel_locacao") {
-    if (!isNonEmptyString(detalhes.cidadeBairro) || !isNonEmptyString(detalhes.tipoImovel)) {
-      return jsonResponse({ ok: false, error: "Preencha as informações do imóvel." }, 400);
-    }
-  } else if (body.tipo === "seguro") {
-    if (!isNonEmptyString(detalhes.tipoSeguro)) {
-      return jsonResponse({ ok: false, error: "Preencha as informações do seguro." }, 400);
-    }
-  } else if (body.tipo === "consorcio") {
-    if (!isNonEmptyString(detalhes.tipoConsorcio)) {
-      return jsonResponse({ ok: false, error: "Preencha as informações do consórcio." }, 400);
-    }
+  const indicacoesList = Array.isArray(body.indicacoes) ? body.indicacoes : [];
+  if (!indicacoesList.length) {
+    return jsonResponse({ ok: false, error: "Adicione ao menos uma indicação." }, 400);
+  }
+  if (indicacoesList.length > MAX_INDICACOES_POR_ENVIO) {
+    return jsonResponse({ ok: false, error: `No máximo ${MAX_INDICACOES_POR_ENVIO} indicações por envio.` }, 400);
+  }
+  for (const item of indicacoesList) {
+    const erro = validarIndicacaoItem(item);
+    if (erro) return jsonResponse({ ok: false, error: erro }, 400);
   }
 
-  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (isNonEmptyString(body.emailIndicado) && !emailRe.test(body.emailIndicado.trim())) {
-    return jsonResponse({ ok: false, error: "E-mail da pessoa indicada inválido." }, 400);
-  }
-  if (isNonEmptyString(body.emailIndicador) && !emailRe.test(body.emailIndicador.trim())) {
+  if (isNonEmptyString(body.emailIndicador) && !EMAIL_RE.test(body.emailIndicador.trim())) {
     return jsonResponse({ ok: false, error: "Seu e-mail é inválido." }, 400);
   }
 
   const now = new Date().toISOString();
   const extraRespostas = body.extraRespostas && typeof body.extraRespostas === "object" ? body.extraRespostas : {};
+  const extraRespostasJson = Object.keys(extraRespostas).length ? JSON.stringify(extraRespostas) : null;
+
+  const insertStmt = env.DB.prepare(
+    `INSERT INTO indicacoes
+      (tipo, nome_indicado, whatsapp_indicado, email_indicado, como_conhece, detalhes,
+       nome_indicador, whatsapp_indicador, email_indicador, autoriza_contato, confirma_permissao,
+       criado_em, extra_respostas)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+
+  const statements = indicacoesList.map((item) => {
+    const detalhes = item.detalhes && typeof item.detalhes === "object" ? item.detalhes : {};
+    return insertStmt.bind(
+      item.tipo,
+      item.nomeIndicado.trim(),
+      item.whatsappIndicado.trim(),
+      (item.emailIndicado || "").trim() || null,
+      (item.comoConhece || "").trim() || null,
+      Object.keys(detalhes).length ? JSON.stringify(detalhes) : null,
+      body.nomeIndicador.trim(),
+      body.whatsappIndicador.trim(),
+      (body.emailIndicador || "").trim() || null,
+      body.autorizaContato.trim(),
+      "Sim",
+      now,
+      extraRespostasJson
+    );
+  });
 
   try {
-    await env.DB.prepare(
-      `INSERT INTO indicacoes
-        (tipo, nome_indicado, whatsapp_indicado, email_indicado, como_conhece, detalhes,
-         nome_indicador, whatsapp_indicador, email_indicador, autoriza_contato, confirma_permissao,
-         criado_em, extra_respostas)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-    )
-      .bind(
-        body.tipo,
-        body.nomeIndicado.trim(),
-        body.whatsappIndicado.trim(),
-        (body.emailIndicado || "").trim() || null,
-        (body.comoConhece || "").trim() || null,
-        Object.keys(detalhes).length ? JSON.stringify(detalhes) : null,
-        body.nomeIndicador.trim(),
-        body.whatsappIndicador.trim(),
-        (body.emailIndicador || "").trim() || null,
-        body.autorizaContato.trim(),
-        "Sim",
-        now,
-        Object.keys(extraRespostas).length ? JSON.stringify(extraRespostas) : null
-      )
-      .run();
+    await env.DB.batch(statements); // grava todas as indicações do envio de uma vez (atômico)
   } catch (err) {
     return jsonResponse({ ok: false, error: "Erro ao salvar indicação." }, 500);
   }
