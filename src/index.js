@@ -184,12 +184,12 @@ function sanitizeConfig(input) {
 
   return {
     capa: {
-      image: str(capa.image, 800),
+      image: str(capa.image, 2000000), // aceita arquivo enviado (data URI), não só link
       position: ["top", "center", "bottom"].includes(capa.position) ? capa.position : "center",
       gradient: capa.gradient !== false,
     },
     logo: {
-      image: str(logo.image, 800),
+      image: str(logo.image, 2000000), // aceita arquivo enviado (data URI), não só link
       position: LOGO_POSITIONS.includes(logo.position) ? logo.position : "top-left",
     },
     landing: {

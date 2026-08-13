@@ -125,7 +125,9 @@ function applyWhatsappButton(cfg) {
 }
 
 function applyConfig(cfg) {
-  document.getElementById("landing-image").src = cfg.capa.image;
+  // se a capa foi removida no admin sem colocar outra no lugar, evita quebrar a imagem no ar
+  const capaImage = cfg.capa.image || CONFIG.capa.image;
+  document.getElementById("landing-image").src = capaImage;
   document.getElementById("landing-image").style.objectPosition = cfg.capa.position || "center";
   document.getElementById("landing-overlay").classList.toggle("is-hidden", cfg.capa.gradient === false);
   document.getElementById("landing-title").textContent = cfg.landing.title;
@@ -142,7 +144,7 @@ function applyConfig(cfg) {
   if (cfg.landing.titleSize === "small") titleEl.classList.add("title-size-small");
   if (cfg.landing.titleSize === "large") titleEl.classList.add("title-size-large");
 
-  document.getElementById("thanks-image").src = cfg.capa.image;
+  document.getElementById("thanks-image").src = capaImage;
   document.getElementById("thanks-image").style.objectPosition = cfg.capa.position || "center";
   document.getElementById("thanks-overlay").classList.toggle("is-hidden", cfg.capa.gradient === false);
   document.getElementById("thanks-title").textContent = cfg.thanks.title;
@@ -406,7 +408,14 @@ async function init() {
   applyConfig(cfg);
   buildExtraPages(extraPages);
   buildProgressBars();
-  showStep(1);
+
+  // usado só pela pré-visualização no /admin: pula direto pro final, sem preencher nada
+  const previewSkip = new URLSearchParams(window.location.search).get("preview_skip") === "1";
+  if (previewSkip) {
+    showScreen("thanks");
+  } else {
+    showStep(1);
+  }
 
   document.getElementById("btn-start").addEventListener("click", () => {
     showScreen("form");

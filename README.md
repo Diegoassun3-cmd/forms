@@ -23,9 +23,10 @@ dashboard-worker.js → mesmo Worker em arquivo único, para colar na aba "Edit 
 ## Personalizar textos, capa e perguntas — sem mexer em código
 
 A forma recomendada é pela aba **Configurações** dentro do `/admin` (veja a seção "Dados" abaixo):
-título/subtítulo/botão da tela inicial, tamanho do título, capa (URL + posição), texto de
-agradecimento e perguntas extras (texto curto, texto longo ou múltipla escolha) — tudo fica salvo no
-banco D1 (tabela `site_config`) e o site aplica na hora, sem precisar publicar de novo.
+título/subtítulo/botão da tela inicial, tamanho do título, capa (upload de arquivo + posição),
+logo (upload de arquivo + posição), texto de agradecimento e perguntas extras (texto curto, texto
+longo ou múltipla escolha) — tudo fica salvo no banco D1 (tabela `site_config`) e o site aplica na
+hora, sem precisar publicar de novo.
 
 O objeto `CONFIG` no topo de `public/app.js` só é usado como **valor padrão** enquanto nada foi salvo
 em Configurações ainda (ou se o banco estiver fora do ar).
@@ -67,13 +68,18 @@ Duas formas de consultar as respostas:
    administrador. Quatro abas:
    - **Candidaturas**: tabela com todas as respostas, exportação em CSV e botão de excluir por linha.
    - **Páginas**: lista de todas as páginas do formulário, na ordem em que aparecem.
-   - **Configurações**: capa (imagem, posição, gradiente), logo (imagem + posição), textos e
+   - **Configurações**: capa (upload de arquivo direto, com redimensionamento/compressão
+     automáticos, posição e gradiente), logo (upload de arquivo + posição), textos e
      alinhamento/posição do texto na tela inicial e de agradecimento, botão de WhatsApp na tela de
      agradecimento, e páginas extras — cada uma com suas próprias perguntas (texto curto, texto
      longo, múltipla escolha de uma ou várias opções, ou sim/não), reordenáveis com as setas ↑/↓.
      Tudo salvo no D1 e aplicado na hora.
+   - **Páginas**: visão geral de todas as páginas do formulário na ordem em que aparecem; as
+     páginas extras podem ser reordenadas arrastando pelo ícone ⠿ (funciona com mouse e touch) —
+     basta soltar na posição desejada e clicar em "Salvar ordem".
    - **Visualizar**: o formulário ao vivo dentro do próprio painel, pra conferir o resultado sem
-     precisar abrir outra aba.
+     precisar abrir outra aba. O botão "Pular pro final" pula direto pra tela de agradecimento sem
+     precisar preencher nenhuma pergunta — útil pra conferir capa, logo e texto finais rapidamente.
    - Configure o token em **Settings → Variables and Secrets → Add** → tipo *Secret* → variable name
      `ADMIN_TOKEN` → valor: uma senha à sua escolha. Sem isso o `/admin` fica bloqueado (401).
 2. **Direto no D1**: painel Cloudflare → **Workers & Pages → D1 → solua-candidaturas → Console**,

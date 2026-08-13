@@ -67,6 +67,20 @@
     .field-checkbox { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
     .field-checkbox input { width: auto; }
 
+    /* upload de imagem */
+    .image-upload { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .image-upload__preview {
+      width: 96px; height: 96px; object-fit: cover; border-radius: 10px; background: var(--creme);
+      border: 1.5px solid var(--creme-escuro);
+    }
+    .image-upload__preview.is-empty { opacity: 0.35; }
+    .image-upload__actions { display: flex; flex-direction: column; gap: 8px; }
+    .image-upload__pick {
+      display: inline-block; cursor: pointer; text-align: center;
+    }
+    .image-upload__status { font-size: 0.8rem; color: var(--texto-suave); }
+    .image-upload__status.is-error { color: var(--erro); }
+
     /* páginas extras */
     .extra-page {
       border: 1.5px solid var(--creme-escuro); border-radius: 12px; padding: 16px; margin-bottom: 16px; background: var(--creme);
@@ -100,8 +114,15 @@
       flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--azul); color: #fff;
       display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
     }
-    .pages-overview .page-name { font-weight: 700; }
+    .pages-overview .page-name { font-weight: 700; flex: 1; }
     .pages-overview .page-tag { color: var(--texto-suave); font-size: 0.8rem; }
+    .pages-overview li.is-fixed { opacity: 0.75; }
+    .pages-overview li.is-dragging { border-color: var(--azul); box-shadow: 0 6px 16px rgba(2,75,165,0.18); }
+    .drag-handle {
+      flex: 0 0 auto; cursor: grab; color: var(--texto-suave); font-size: 1.1rem; padding: 4px;
+      touch-action: none; user-select: none;
+    }
+    .drag-handle--disabled { cursor: default; opacity: 0.3; }
 
     /* pré-visualização */
     .preview-toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
@@ -172,10 +193,15 @@
       <div class="tab-panel" id="tab-paginas">
         <h1 class="admin__title" style="margin-bottom: 8px;">Páginas do formulário</h1>
         <p class="field__hint" style="margin-bottom: 20px;">
-          Nessa ordem que a pessoa candidata vê. As etapas 01–05 são fixas; as páginas extras você
-          cria e ordena na aba Configurações.
+          Nessa ordem que a pessoa candidata vê. As etapas 01–05 são fixas e não têm como reordenar.
+          Arraste as páginas extras (ícone ⠿) pra cima ou pra baixo pra mudar a ordem delas.
         </p>
         <ul class="pages-overview" id="pages-overview"></ul>
+        <div class="toolbar" style="margin-top: 16px;">
+          <button class="btn btn-primary btn-small" id="btn-save-pages-order" type="button">Salvar ordem</button>
+        </div>
+        <p class="error-msg" id="pages-error"></p>
+        <p class="success-msg" id="pages-success">Salvo!</p>
       </div>
 
       <!-- ===================== ABA: CONFIGURAÇÕES ===================== -->
@@ -186,8 +212,18 @@
           <h2>Capa</h2>
           <p class="field__hint">Foto usada na tela inicial e na de agradecimento.</p>
           <div class="field">
-            <label class="field__label" for="cfg-capa-image">URL da imagem</label>
-            <input type="text" id="cfg-capa-image" placeholder="https://..." />
+            <label class="field__label">Imagem</label>
+            <div class="image-upload">
+              <img class="image-upload__preview is-empty" id="cfg-capa-preview" alt="" />
+              <div class="image-upload__actions">
+                <label class="btn btn-ghost btn-small image-upload__pick">
+                  Escolher foto
+                  <input type="file" accept="image/*" id="cfg-capa-file" class="hidden" />
+                </label>
+                <button type="button" class="btn-delete" id="cfg-capa-remove">Remover</button>
+              </div>
+              <span class="image-upload__status" id="cfg-capa-status"></span>
+            </div>
           </div>
           <div class="field">
             <label class="field__label" for="cfg-capa-position">Posição da imagem</label>
@@ -210,8 +246,18 @@
           <h2>Logo</h2>
           <p class="field__hint">Opcional. Aparece sobre a foto, na tela inicial e na de agradecimento.</p>
           <div class="field">
-            <label class="field__label" for="cfg-logo-image">URL da logo</label>
-            <input type="text" id="cfg-logo-image" placeholder="https://... (deixe em branco pra não mostrar)" />
+            <label class="field__label">Imagem da logo</label>
+            <div class="image-upload">
+              <img class="image-upload__preview is-empty" id="cfg-logo-preview" alt="" />
+              <div class="image-upload__actions">
+                <label class="btn btn-ghost btn-small image-upload__pick">
+                  Escolher logo
+                  <input type="file" accept="image/*" id="cfg-logo-file" class="hidden" />
+                </label>
+                <button type="button" class="btn-delete" id="cfg-logo-remove">Remover</button>
+              </div>
+              <span class="image-upload__status" id="cfg-logo-status"></span>
+            </div>
           </div>
           <div class="field">
             <label class="field__label" for="cfg-logo-position">Posição da logo</label>
@@ -325,7 +371,8 @@
       <div class="tab-panel" id="tab-preview">
         <h1 class="admin__title" style="margin-bottom: 14px;">Visualizar o formulário</h1>
         <div class="preview-toolbar">
-          <button class="btn btn-ghost btn-small" id="btn-preview-refresh" type="button">Atualizar</button>
+          <button class="btn btn-ghost btn-small" id="btn-preview-refresh" type="button">Reiniciar (do começo)</button>
+          <button class="btn btn-ghost btn-small" id="btn-preview-skip" type="button">Pular pro final (sem responder)</button>
           <a class="btn btn-ghost btn-small" id="btn-preview-newtab" href="/" target="_blank" rel="noopener">Abrir em nova aba</a>
         </div>
         <div class="preview-frame-wrap">
@@ -489,22 +536,80 @@
     // Páginas (visão geral)
     // ---------------------------------------------------------------
 
-    function renderPagesOverview(cfg) {
-      const items = [
+    /** Redesenha a lista de páginas a partir de extraPagesDraft (fonte única de verdade). */
+    function renderPagesOverview() {
+      const fixedBefore = [
         { name: "Tela inicial", tag: "abertura" },
         ...BUILTIN_STEPS.map((name) => ({ name, tag: "fixa" })),
-        ...(cfg.extraPages || []).map((p, i) => ({ name: `${String(6 + i).padStart(2, "0")} · ${p.title}`, tag: "extra" })),
-        { name: "Agradecimento", tag: "final" },
       ];
-      document.getElementById("pages-overview").innerHTML = items
-        .map(
-          (it, i) => `<li>
+      const extras = extraPagesDraft.map((p, i) => ({
+        name: `${String(6 + i).padStart(2, "0")} · ${p.title || "Página extra"}`,
+        tag: "extra",
+        extraIndex: i,
+      }));
+      const fixedAfter = [{ name: "Agradecimento", tag: "final" }];
+      const all = [...fixedBefore, ...extras, ...fixedAfter];
+
+      document.getElementById("pages-overview").innerHTML = all
+        .map((it, i) => {
+          const draggable = it.extraIndex !== undefined;
+          return `<li class="${draggable ? "" : "is-fixed"}" ${draggable ? `data-extra-index="${it.extraIndex}"` : ""}>
+            <span class="drag-handle ${draggable ? "" : "drag-handle--disabled"}" title="${draggable ? "Arraste pra reordenar" : "Página fixa"}">⠿</span>
             <span class="page-badge">${i + 1}</span>
             <span class="page-name">${esc(it.name)}</span>
             <span class="page-tag">${esc(it.tag)}</span>
-          </li>`
-        )
+          </li>`;
+        })
         .join("");
+    }
+
+    /** Arrastar (mouse/toque) pra reordenar as páginas extras na lista de visão geral. */
+    function initPagesDrag() {
+      const listEl = document.getElementById("pages-overview");
+      let draggedRef = null;
+
+      listEl.addEventListener("pointerdown", (e) => {
+        const handle = e.target.closest(".drag-handle:not(.drag-handle--disabled)");
+        if (!handle) return;
+        const li = handle.closest("li[data-extra-index]");
+        if (!li) return;
+
+        draggedRef = extraPagesDraft[Number(li.dataset.extraIndex)];
+        li.classList.add("is-dragging");
+        e.preventDefault();
+
+        const onMove = (ev) => {
+          if (!draggedRef) return;
+          const items = Array.from(listEl.querySelectorAll("li[data-extra-index]"));
+          const hovered = items.find((item) => {
+            const r = item.getBoundingClientRect();
+            return ev.clientY >= r.top && ev.clientY <= r.bottom;
+          });
+          if (!hovered) return;
+
+          const targetIdx = Number(hovered.dataset.extraIndex);
+          const currentIdx = extraPagesDraft.indexOf(draggedRef);
+          if (targetIdx !== currentIdx) {
+            extraPagesDraft.splice(currentIdx, 1);
+            extraPagesDraft.splice(targetIdx, 0, draggedRef);
+            renderPagesOverview();
+            const newIdx = extraPagesDraft.indexOf(draggedRef);
+            const newLi = listEl.querySelector(`li[data-extra-index="${newIdx}"]`);
+            if (newLi) newLi.classList.add("is-dragging");
+          }
+        };
+
+        const onUp = () => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          listEl.querySelectorAll(".is-dragging").forEach((el) => el.classList.remove("is-dragging"));
+          draggedRef = null;
+          renderExtraPagesEditor(); // mantém a aba Configurações sincronizada
+        };
+
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+      });
     }
 
     // ---------------------------------------------------------------
@@ -604,6 +709,7 @@
       syncExtraPagesFromDom();
       extraPagesDraft.push({ title: `Página extra ${extraPagesDraft.length + 1}`, questions: [] });
       renderExtraPagesEditor();
+      renderPagesOverview();
     }
 
     function swapItems(arr, i, j) {
@@ -631,10 +737,12 @@
     }
 
     function applyConfigToForm(cfg) {
-      document.getElementById("cfg-capa-image").value = cfg.capa.image || "";
+      setImagePreview(document.getElementById("cfg-capa-preview"), cfg.capa.image || "");
+      document.getElementById("cfg-capa-status").textContent = "";
       document.getElementById("cfg-capa-position").value = cfg.capa.position || "center";
       document.getElementById("cfg-capa-gradient").checked = cfg.capa.gradient !== false;
-      document.getElementById("cfg-logo-image").value = cfg.logo.image || "";
+      setImagePreview(document.getElementById("cfg-logo-preview"), cfg.logo.image || "");
+      document.getElementById("cfg-logo-status").textContent = "";
       document.getElementById("cfg-logo-position").value = cfg.logo.position || "top-left";
       document.getElementById("cfg-landing-title").value = cfg.landing.title || "";
       document.getElementById("cfg-landing-title-size").value = cfg.landing.titleSize || "normal";
@@ -653,7 +761,7 @@
         questions: (p.questions || []).map((q) => ({ ...q })),
       }));
       renderExtraPagesEditor();
-      renderPagesOverview(cfg);
+      renderPagesOverview();
     }
 
     async function loadConfigIntoForm() {
@@ -671,12 +779,12 @@
 
       return {
         capa: {
-          image: document.getElementById("cfg-capa-image").value.trim(),
+          image: document.getElementById("cfg-capa-preview").getAttribute("src") || "",
           position: document.getElementById("cfg-capa-position").value,
           gradient: document.getElementById("cfg-capa-gradient").checked,
         },
         logo: {
-          image: document.getElementById("cfg-logo-image").value.trim(),
+          image: document.getElementById("cfg-logo-preview").getAttribute("src") || "",
           position: document.getElementById("cfg-logo-position").value,
         },
         landing: {
@@ -699,15 +807,16 @@
       };
     }
 
-    async function saveConfig() {
-      const btn = document.getElementById("btn-save-config");
-      const errorEl = document.getElementById("config-error");
-      const successEl = document.getElementById("config-success");
+    async function saveConfig(ids) {
+      const btn = document.getElementById((ids && ids.btn) || "btn-save-config");
+      const errorEl = document.getElementById((ids && ids.error) || "config-error");
+      const successEl = document.getElementById((ids && ids.success) || "config-success");
       errorEl.classList.remove("is-visible");
       successEl.classList.remove("is-visible");
 
       const token = sessionStorage.getItem(STORAGE_KEY);
       const payload = collectConfigFromForm();
+      const originalLabel = btn.textContent;
 
       btn.disabled = true;
       btn.textContent = "Salvando…";
@@ -730,7 +839,7 @@
         errorEl.classList.add("is-visible");
       } finally {
         btn.disabled = false;
-        btn.textContent = "Salvar configurações";
+        btn.textContent = originalLabel;
       }
     }
 
@@ -803,9 +912,121 @@
 
     document.getElementById("btn-preview-refresh").addEventListener("click", refreshPreview);
 
+    document.getElementById("btn-preview-skip").addEventListener("click", () => {
+      document.getElementById("preview-frame").src = "/?preview_skip=1&t=" + Date.now();
+    });
+
     document.getElementById("btn-add-page").addEventListener("click", addPage);
 
-    document.getElementById("btn-save-config").addEventListener("click", saveConfig);
+    document.getElementById("btn-save-config").addEventListener("click", () => saveConfig());
+
+    document.getElementById("btn-save-pages-order").addEventListener("click", () =>
+      saveConfig({ btn: "btn-save-pages-order", error: "pages-error", success: "pages-success" })
+    );
+
+    // ---------------------------------------------------------------
+    // Upload de imagens (capa e logo)
+    // ---------------------------------------------------------------
+
+    function setImagePreview(imgEl, value) {
+      if (value) {
+        imgEl.src = value;
+        imgEl.classList.remove("is-empty");
+      } else {
+        imgEl.removeAttribute("src");
+        imgEl.classList.add("is-empty");
+      }
+    }
+
+    function resizeImageFile(file, { maxDim, mime, quality }) {
+      return new Promise((resolve, reject) => {
+        if (!file.type || !file.type.startsWith("image/")) {
+          reject(new Error("Escolha um arquivo de imagem."));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error("Arquivo de imagem inválido."));
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width >= height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL(mime, quality));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleImageUpload(file, opts, previewEl, statusEl) {
+      statusEl.textContent = "Processando imagem…";
+      statusEl.classList.remove("is-error");
+      try {
+        const mime = file.type === "image/png" || file.type === "image/webp" ? "image/png" : "image/jpeg";
+        const dataUrl = await resizeImageFile(file, { maxDim: opts.maxDim, mime, quality: opts.quality });
+        if (dataUrl.length > opts.maxChars) {
+          throw new Error(
+            `Imagem ainda ficou grande (${Math.round(dataUrl.length / 1024)} KB) mesmo compactada. ` +
+              "Tente uma imagem mais simples ou já reduzida."
+          );
+        }
+        setImagePreview(previewEl, dataUrl);
+        statusEl.textContent = `Pronto (${Math.round(dataUrl.length / 1024)} KB).`;
+      } catch (err) {
+        statusEl.textContent = err.message || "Erro ao processar a imagem.";
+        statusEl.classList.add("is-error");
+      }
+    }
+
+    document.getElementById("cfg-capa-file").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      handleImageUpload(
+        file,
+        { maxDim: 1600, maxChars: 900000, quality: 0.78 },
+        document.getElementById("cfg-capa-preview"),
+        document.getElementById("cfg-capa-status")
+      );
+    });
+
+    document.getElementById("cfg-logo-file").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      handleImageUpload(
+        file,
+        { maxDim: 400, maxChars: 350000, quality: 0.9 },
+        document.getElementById("cfg-logo-preview"),
+        document.getElementById("cfg-logo-status")
+      );
+    });
+
+    document.getElementById("cfg-capa-remove").addEventListener("click", () => {
+      setImagePreview(document.getElementById("cfg-capa-preview"), "");
+      document.getElementById("cfg-capa-status").textContent = "";
+    });
+
+    document.getElementById("cfg-logo-remove").addEventListener("click", () => {
+      setImagePreview(document.getElementById("cfg-logo-preview"), "");
+      document.getElementById("cfg-logo-status").textContent = "";
+    });
+
+    initPagesDrag();
 
     document.getElementById("extra-pages-editor").addEventListener("click", (e) => {
       const addQBtn = e.target.closest("[data-add-question-to]");
@@ -823,6 +1044,7 @@
         const pi = Number(pageRemoveBtn.closest(".extra-page").dataset.pageIndex);
         extraPagesDraft.splice(pi, 1);
         renderExtraPagesEditor();
+        renderPagesOverview();
         return;
       }
 
@@ -832,6 +1054,7 @@
         const pi = Number(pageUpBtn.closest(".extra-page").dataset.pageIndex);
         if (pi > 0) swapItems(extraPagesDraft, pi, pi - 1);
         renderExtraPagesEditor();
+        renderPagesOverview();
         return;
       }
 
@@ -841,6 +1064,7 @@
         const pi = Number(pageDownBtn.closest(".extra-page").dataset.pageIndex);
         if (pi < extraPagesDraft.length - 1) swapItems(extraPagesDraft, pi, pi + 1);
         renderExtraPagesEditor();
+        renderPagesOverview();
         return;
       }
 
@@ -882,6 +1106,16 @@
       if (e.target.classList.contains("extra-q-type")) {
         const optionsEl = e.target.closest(".extra-q").querySelector(".extra-q-options");
         optionsEl.style.display = QUESTION_TYPES_WITH_OPTIONS.includes(e.target.value) ? "" : "none";
+      }
+    });
+
+    // reflete o título da página na aba Páginas em tempo real, sem perder o foco do campo
+    document.getElementById("extra-pages-editor").addEventListener("input", (e) => {
+      if (!e.target.classList.contains("extra-page-title")) return;
+      const pi = Number(e.target.closest(".extra-page").dataset.pageIndex);
+      if (extraPagesDraft[pi]) {
+        extraPagesDraft[pi].title = e.target.value;
+        renderPagesOverview();
       }
     });
 
