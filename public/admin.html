@@ -154,6 +154,7 @@
       <div class="tabs">
         <button class="tab-btn is-active" type="button" data-tab="candidaturas">Candidaturas</button>
         <button class="tab-btn" type="button" data-tab="indicacoes">Indicações</button>
+        <button class="tab-btn" type="button" data-tab="captacoes">Captações</button>
         <button class="tab-btn" type="button" data-tab="paginas">Páginas</button>
         <button class="tab-btn" type="button" data-tab="config">Configurações</button>
         <button class="tab-btn" type="button" data-tab="preview">Visualizar</button>
@@ -232,12 +233,50 @@
         </div>
       </div>
 
+      <!-- ===================== ABA: CAPTAÇÕES ===================== -->
+      <div class="tab-panel" id="tab-captacoes">
+        <div class="admin__header">
+          <h1 class="admin__title">Cadastros de imóveis recebidos</h1>
+          <div class="toolbar">
+            <span class="admin__count" id="count-captacoes"></span>
+            <button class="btn btn-ghost btn-small" id="btn-refresh-captacoes" type="button">Atualizar</button>
+            <button class="btn btn-primary btn-small" id="btn-csv-captacoes" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>WhatsApp</th>
+                <th>E-mail</th>
+                <th>Objetivo</th>
+                <th>CEP</th>
+                <th>Endereço</th>
+                <th>Número</th>
+                <th>Complemento</th>
+                <th>Bairro</th>
+                <th>Cidade</th>
+                <th>Tipo de imóvel</th>
+                <th>Valor pretendido</th>
+                <th>LGPD</th>
+                <th>Perguntas extras</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rows-captacoes"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ===================== ABA: PÁGINAS (visão geral) ===================== -->
       <div class="tab-panel" id="tab-paginas">
         <h1 class="admin__title" style="margin-bottom: 8px;">Páginas do formulário</h1>
         <div class="form-switch" data-panel="paginas">
           <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
           <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+          <button type="button" class="form-switch__btn" data-form="captacao">Captação</button>
         </div>
         <p class="field__hint" style="margin-bottom: 20px;">
           Nessa ordem que a pessoa vê o formulário selecionado acima. As etapas fixas não têm como
@@ -257,6 +296,7 @@
         <div class="form-switch" data-panel="config">
           <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
           <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+          <button type="button" class="form-switch__btn" data-form="captacao">Captação</button>
         </div>
         <p class="field__hint" style="margin-bottom: 20px;">
           Cada formulário tem sua própria configuração — escolha acima qual você quer editar.
@@ -447,6 +487,7 @@
         <div class="form-switch" data-panel="preview">
           <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
           <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+          <button type="button" class="form-switch__btn" data-form="captacao">Captação</button>
         </div>
         <div class="preview-toolbar">
           <button class="btn btn-ghost btn-small" id="btn-preview-refresh" type="button">Reiniciar (do começo)</button>
@@ -464,15 +505,17 @@
     const STORAGE_KEY = "solua_admin_token";
     let currentRows = [];
     let currentRowsIndicacoes = [];
+    let currentRowsCaptacoes = [];
     let extraPagesDraft = [];
 
     // Cada formulário tem sua própria config, tabela de respostas e página de pré-visualização.
     const FORMS = {
       vagas: { label: "Vagas", previewPath: "/", hasWhatsapp: true },
       indicacao: { label: "Indicações", previewPath: "/indicacao", hasWhatsapp: false },
+      captacao: { label: "Captação", previewPath: "/captacao", hasWhatsapp: true },
     };
     let currentForm = "vagas";
-    const configDraft = { vagas: null, indicacao: null };
+    const configDraft = { vagas: null, indicacao: null, captacao: null };
 
     // Valores padrão exibidos enquanto nada foi salvo em Configurações ainda
     // (mesmos valores hoje fixos em public/app.js).
@@ -549,7 +592,44 @@
       extraPages: [],
     };
 
-    const FORM_DEFAULTS = { vagas: DEFAULT_CONFIG_VAGAS, indicacao: DEFAULT_CONFIG_INDICACAO };
+    // Idem, mas para o formulário de Captação de imóveis (public/captacao.js tem os mesmos valores).
+    const DEFAULT_CONFIG_CAPTACAO = {
+      footer: "Solua Imobiliária — Imóveis • Consórcios • Seguros — 25 anos ao seu lado.",
+      capa: {
+        image: "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600",
+        position: "center",
+        gradient: true,
+      },
+      logo: {
+        image: "",
+        position: "top-left",
+        size: "medio",
+      },
+      landing: {
+        title: "Seu imóvel, novos caminhos.",
+        titleSize: "normal",
+        subtitle:
+          "Quer vender ou alugar seu imóvel? Deixe seus dados e as informações básicas da " +
+          "propriedade. A equipe Solua vai entrar em contato para entender seu objetivo e " +
+          "apresentar as melhores possibilidades.",
+        buttonLabel: "Cadastrar meu imóvel",
+        textAlign: "left",
+        textPosition: "bottom",
+      },
+      thanks: {
+        title: "Recebemos os dados do seu imóvel!",
+        message:
+          "Nossa equipe vai analisar as informações e entrar em contato em breve para conversar " +
+          "sobre as melhores possibilidades para vender ou alugar seu imóvel.",
+        textAlign: "center",
+        textPosition: "center",
+        whatsappNumber: "",
+        whatsappMessage: "Olá! Acabei de cadastrar meu imóvel no site da Solua.",
+      },
+      extraPages: [],
+    };
+
+    const FORM_DEFAULTS = { vagas: DEFAULT_CONFIG_VAGAS, indicacao: DEFAULT_CONFIG_INDICACAO, captacao: DEFAULT_CONFIG_CAPTACAO };
 
     const BUILTIN_STEPS_BY_FORM = {
       vagas: [
@@ -565,6 +645,13 @@
         "03 · Sobre a oportunidade",
         "04 · Agora, sobre você",
         "05 · Podemos entrar em contato?",
+      ],
+      captacao: [
+        "01 · Seus dados",
+        "02 · O que você deseja fazer com o imóvel?",
+        "03 · Onde fica o imóvel?",
+        "04 · Tipo de imóvel",
+        "05 · Valor e autorização",
       ],
     };
 
@@ -758,6 +845,83 @@
         "criado_em", "tipo", "nome_indicado", "whatsapp_indicado", "email_indicado", "como_conhece",
         "detalhes", "nome_indicador", "whatsapp_indicador", "email_indicador", "autoriza_contato",
         "confirma_permissao", "extra_respostas",
+      ];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    // ---------------------------------------------------------------
+    // Captações (aba própria, mesma lógica das abas Candidaturas/Indicações)
+    // ---------------------------------------------------------------
+
+    function renderRowsCaptacoes(rows) {
+      currentRowsCaptacoes = rows;
+      document.getElementById("count-captacoes").textContent = rows.length + " cadastro(s)";
+      document.getElementById("rows-captacoes").innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${esc(fmtDate(r.criado_em))}</td>
+            <td>${esc(r.nome)}</td>
+            <td>${esc(r.whatsapp)}</td>
+            <td>${esc(r.email)}</td>
+            <td>${esc(r.objetivo)}</td>
+            <td>${esc(r.cep)}</td>
+            <td class="cell-wrap">${esc(r.endereco)}</td>
+            <td>${esc(r.numero)}</td>
+            <td>${esc(r.complemento)}</td>
+            <td>${esc(r.bairro)}</td>
+            <td>${esc(r.cidade)}</td>
+            <td>${esc(r.tipo_imovel)}</td>
+            <td>${esc(r.valor_pretendido)}</td>
+            <td>${esc(r.lgpd)}</td>
+            <td class="cell-wrap">${esc(fmtExtraRespostas(r.extra_respostas))}</td>
+            <td><button class="btn-delete" type="button" data-delete-captacao-id="${esc(r.id)}">Excluir</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function loadDataCaptacoes(token) {
+      const res = await fetch("/admin/data?form=captacao", { headers: { "x-admin-token": token }, cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar cadastros.");
+      }
+      const data = await res.json();
+      return data.rows || [];
+    }
+
+    async function deleteRowCaptacao(id, btn) {
+      const nome = currentRowsCaptacoes.find((r) => String(r.id) === String(id))?.nome || "esse cadastro";
+      if (!confirm(`Excluir o cadastro de "${nome}"? Essa ação não pode ser desfeita.`)) return;
+
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      btn.disabled = true;
+      btn.textContent = "Excluindo…";
+
+      try {
+        const res = await fetch(`/admin/data/${encodeURIComponent(id)}?form=captacao`, {
+          method: "DELETE",
+          headers: { "x-admin-token": token },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Não foi possível excluir.");
+        }
+        currentRowsCaptacoes = currentRowsCaptacoes.filter((r) => String(r.id) !== String(id));
+        renderRowsCaptacoes(currentRowsCaptacoes);
+      } catch (err) {
+        alert(err.message || "Erro ao excluir.");
+        btn.disabled = false;
+        btn.textContent = "Excluir";
+      }
+    }
+
+    function toCsvCaptacoes(rows) {
+      const headers = [
+        "criado_em", "nome", "whatsapp", "email", "objetivo", "cep", "endereco", "numero",
+        "complemento", "bairro", "cidade", "tipo_imovel", "valor_pretendido", "lgpd", "extra_respostas",
       ];
       const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
       const lines = [headers.join(",")];
@@ -1135,12 +1299,17 @@
       const errorEl = document.getElementById("gate-error");
       errorEl.classList.remove("is-visible");
       try {
-        const [rows, rowsIndicacoes] = await Promise.all([loadData(token), loadDataIndicacoes(token)]);
+        const [rows, rowsIndicacoes, rowsCaptacoes] = await Promise.all([
+          loadData(token),
+          loadDataIndicacoes(token),
+          loadDataCaptacoes(token),
+        ]);
         sessionStorage.setItem(STORAGE_KEY, token);
         document.getElementById("gate").classList.add("hidden");
         document.getElementById("content").classList.remove("hidden");
         renderRows(rows);
         renderRowsIndicacoes(rowsIndicacoes);
+        renderRowsCaptacoes(rowsCaptacoes);
         await loadAllConfigs();
         applyConfigToForm(configDraft[currentForm]);
         updateConfigVisibilityForForm();
@@ -1193,6 +1362,24 @@
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = "indicacoes-solua.csv";
+      link.click();
+    });
+
+    document.getElementById("btn-refresh-captacoes").addEventListener("click", async () => {
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      if (token) renderRowsCaptacoes(await loadDataCaptacoes(token));
+    });
+
+    document.getElementById("rows-captacoes").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-delete-captacao-id]");
+      if (btn) deleteRowCaptacao(btn.dataset.deleteCaptacaoId, btn);
+    });
+
+    document.getElementById("btn-csv-captacoes").addEventListener("click", () => {
+      const blob = new Blob([toCsvCaptacoes(currentRowsCaptacoes)], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "captacoes-solua.csv";
       link.click();
     });
 

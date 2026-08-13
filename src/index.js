@@ -105,6 +105,79 @@ async function handleSubmit(request, env) {
   return jsonResponse({ ok: true });
 }
 
+const REQUIRED_FIELDS_CAPTACAO = ["nome", "whatsapp", "objetivo", "cep", "endereco", "bairro", "cidade", "tipoImovel", "temValor", "lgpd"];
+
+/** Recebe um cadastro de imóvel (formulário /captacao) e grava na tabela `captacoes`. */
+async function handleSubmitCaptacao(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  for (const field of REQUIRED_FIELDS_CAPTACAO) {
+    if (!isNonEmptyString(body[field])) {
+      return jsonResponse({ ok: false, error: `Campo obrigatório ausente: ${field}` }, 400);
+    }
+  }
+
+  const lgpd = body.lgpd.trim().toLowerCase();
+  if (lgpd !== "sim") {
+    return jsonResponse(
+      { ok: false, error: "É necessário autorizar o tratamento dos dados (LGPD) para enviar o cadastro." },
+      400
+    );
+  }
+
+  if (isNonEmptyString(body.website)) {
+    return jsonResponse({ ok: true }); // honeypot: finge sucesso, não grava
+  }
+
+  const temValor = body.temValor.trim().toLowerCase();
+  if (temValor === "sim" && !isNonEmptyString(body.valorPretendido)) {
+    return jsonResponse({ ok: false, error: "Informe o valor pretendido." }, 400);
+  }
+
+  if (isNonEmptyString(body.email) && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email.trim())) {
+    return jsonResponse({ ok: false, error: "E-mail inválido." }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const extraRespostas = body.extraRespostas && typeof body.extraRespostas === "object" ? body.extraRespostas : {};
+
+  try {
+    await env.DB.prepare(
+      `INSERT INTO captacoes
+        (nome, whatsapp, email, objetivo, cep, endereco, numero, complemento, bairro, cidade,
+         tipo_imovel, valor_pretendido, lgpd, criado_em, extra_respostas)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        body.nome.trim(),
+        body.whatsapp.trim(),
+        (body.email || "").trim() || null,
+        body.objetivo.trim(),
+        body.cep.trim(),
+        body.endereco.trim(),
+        (body.numero || "").trim() || null,
+        (body.complemento || "").trim() || null,
+        body.bairro.trim(),
+        body.cidade.trim(),
+        body.tipoImovel.trim(),
+        (body.valorPretendido || "").trim() || null,
+        "Sim",
+        now,
+        Object.keys(extraRespostas).length ? JSON.stringify(extraRespostas) : null
+      )
+      .run();
+  } catch (err) {
+    return jsonResponse({ ok: false, error: "Erro ao salvar cadastro." }, 500);
+  }
+
+  return jsonResponse({ ok: true });
+}
+
 const TIPOS_INDICACAO = ["imovel_venda", "imovel_locacao", "seguro", "consorcio"];
 const MAX_INDICACOES_POR_ENVIO = 5;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -223,10 +296,11 @@ function isAuthorizedAdmin(request, env) {
   return Boolean(env.ADMIN_TOKEN) && token === env.ADMIN_TOKEN;
 }
 
-/** Duas "instâncias" de formulário, cada uma com sua própria tabela de respostas e de config. */
+/** Três "instâncias" de formulário, cada uma com sua própria tabela de respostas e de config. */
 const FORM_TABLES = {
   vagas: { data: "candidaturas", config: "site_config" },
   indicacao: { data: "indicacoes", config: "indicacao_config" },
+  captacao: { data: "captacoes", config: "captacao_config" },
 };
 
 function resolveForm(url) {
@@ -392,6 +466,11 @@ export default {
         return await handleSubmitIndicacao(request, env);
       }
 
+      if (url.pathname === "/api/captacao/submit") {
+        if (request.method !== "POST") return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
+        return await handleSubmitCaptacao(request, env);
+      }
+
       if (url.pathname === "/api/config") {
         return await handleGetConfig(env, FORM_TABLES[resolveForm(url)].config);
       }
@@ -415,6 +494,10 @@ export default {
 
       if (url.pathname === "/indicacao") {
         return env.ASSETS.fetch(new Request(new URL("/indicacao.html", request.url), request));
+      }
+
+      if (url.pathname === "/captacao") {
+        return env.ASSETS.fetch(new Request(new URL("/captacao.html", request.url), request));
       }
 
       return env.ASSETS.fetch(request);
