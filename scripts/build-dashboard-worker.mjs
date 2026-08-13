@@ -7,6 +7,8 @@ const css = readFileSync("public/styles.css", "utf8");
 const js = readFileSync("public/app.js", "utf8");
 const svg = readFileSync("public/images/placeholder.svg", "utf8");
 const admin = readFileSync("public/admin.html", "utf8");
+const indicacaoHtml = readFileSync("public/indicacao.html", "utf8");
+const indicacaoJs = readFileSync("public/indicacao.js", "utf8");
 
 const header = `/**
  * Worker da Solua Imóveis — formulário de candidatura para corretores(as) parceiros(as).
@@ -27,6 +29,8 @@ const constants = [
   ["APP_JS", js],
   ["PLACEHOLDER_SVG", svg],
   ["ADMIN_HTML", admin],
+  ["INDICACAO_HTML", indicacaoHtml],
+  ["INDICACAO_JS", indicacaoJs],
 ]
   .map(([name, value]) => `const ${name} = ${JSON.stringify(value)};`)
   .join("\n");

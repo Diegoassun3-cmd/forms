@@ -1,17 +1,20 @@
 /**
- * Formulário de candidatura — Solua Imóveis
+ * Formulário de Indicação — Solua Imóveis
  *
- * ---------------------------------------------------------------
- * PARA PERSONALIZAR: os valores padrão abaixo (CONFIG) só valem
- * enquanto ninguém salvou nada em Configurações no /admin. Depois de
- * salvar por lá, o que estiver no banco manda — este objeto vira só
- * o "modo de segurança" caso o banco esteja vazio ou fora do ar.
- * ---------------------------------------------------------------
+ * Mesma lógica de navegação/validação do formulário de vagas (public/app.js), mas com uma
+ * etapa condicional: as perguntas da etapa 3 mudam de acordo com o tipo de indicação escolhido
+ * na etapa 1 (imóvel, seguro ou consórcio) — assim quem indica um seguro não vê perguntas de
+ * imóvel, e vice-versa.
+ *
+ * PARA PERSONALIZAR: os valores padrão abaixo (CONFIG) só valem enquanto ninguém salvou nada
+ * em Configurações (aba Indicações) no /admin. Depois de salvar por lá, o que estiver no banco
+ * manda — este objeto vira só o "modo de segurança" caso o banco esteja vazio ou fora do ar.
  */
+
 const CAPA_URL = "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600";
 
 const CONFIG = {
-  footer: "",
+  footer: "Solua Imobiliária — Imóveis • Consórcios • Seguros — 25 anos ao seu lado.",
   capa: {
     image: CAPA_URL,
     position: "center",
@@ -23,24 +26,24 @@ const CONFIG = {
     size: "medio",
   },
   landing: {
-    title: "Vagas para corretores (as)",
+    title: "Uma indicação pode virar comissão.",
     titleSize: "normal",
     subtitle:
-      "Leva menos de 5 minutos. Conte um pouco sobre sua experiência e a forma como você atua " +
-      "no mercado imobiliário para darmos início à conversa.",
-    buttonLabel: "Iniciar",
+      "Conhece alguém que quer vender ou alugar um imóvel, contratar um seguro ou fazer um " +
+      "consórcio? Indique para a Solua. A gente cuida do atendimento e, se fechar negócio, sua " +
+      "indicação pode virar comissão.",
+    buttonLabel: "Quero fazer uma indicação",
     textAlign: "left",
     textPosition: "bottom",
   },
   thanks: {
-    title: "Recebemos sua candidatura!",
+    title: "Indicação recebida. 💙",
     message:
-      "Obrigado por dedicar seu tempo. Nosso time vai analisar suas respostas e entrar em " +
-      "contato pelo WhatsApp informado em breve.",
+      "Agora é com a Solua. Nossa equipe vai entrar em contato com a pessoa indicada e entender " +
+      "como podemos ajudar. Se fechar negócio, sua indicação pode virar comissão. Obrigado por " +
+      "indicar a Solua.",
     textAlign: "center",
     textPosition: "center",
-    whatsappNumber: "",
-    whatsappMessage: "Olá! Acabei de enviar minha candidatura pelo site da Solua.",
   },
   extraPages: [],
 };
@@ -53,27 +56,19 @@ let extraPages = [];
 function mergeConfig(saved) {
   if (!saved || typeof saved !== "object") return CONFIG;
 
-  let mergedExtraPages = [];
-  if (Array.isArray(saved.extraPages)) {
-    mergedExtraPages = saved.extraPages;
-  } else if (Array.isArray(saved.extraQuestions) && saved.extraQuestions.length) {
-    // compatibilidade com configs salvas antes de existirem "páginas extras"
-    mergedExtraPages = [{ id: "p1", title: "Perguntas extras", questions: saved.extraQuestions }];
-  }
-
   return {
     footer: typeof saved.footer === "string" ? saved.footer : CONFIG.footer,
     capa: { ...CONFIG.capa, ...(saved.capa || {}) },
     logo: { ...CONFIG.logo, ...(saved.logo || {}) },
     landing: { ...CONFIG.landing, ...(saved.landing || {}) },
     thanks: { ...CONFIG.thanks, ...(saved.thanks || {}) },
-    extraPages: mergedExtraPages,
+    extraPages: Array.isArray(saved.extraPages) ? saved.extraPages : [],
   };
 }
 
 async function loadConfig() {
   try {
-    const res = await fetch("/api/config", { cache: "no-store" });
+    const res = await fetch("/api/config?form=indicacao", { cache: "no-store" });
     if (!res.ok) return CONFIG;
     const data = await res.json();
     return mergeConfig(data.config);
@@ -86,10 +81,6 @@ function escapeHtml(value) {
   const div = document.createElement("div");
   div.textContent = value == null ? "" : String(value);
   return div.innerHTML;
-}
-
-function digitsOnly(value) {
-  return String(value || "").replace(/\D/g, "");
 }
 
 function setTextAlign(el, align) {
@@ -118,18 +109,6 @@ function applyLogo(imgEl, cfg) {
   LOGO_SIZES.forEach((size) => imgEl.classList.remove(`brand-logo--size-${size}`));
   const size = LOGO_SIZES.includes(cfg.logo.size) ? cfg.logo.size : "medio";
   imgEl.classList.add(`brand-logo--size-${size}`);
-}
-
-function applyWhatsappButton(cfg) {
-  const btn = document.getElementById("thanks-whatsapp");
-  const number = digitsOnly(cfg.thanks.whatsappNumber);
-  if (!number) {
-    btn.classList.add("hidden");
-    return;
-  }
-  const text = encodeURIComponent(cfg.thanks.whatsappMessage || "");
-  btn.href = `https://wa.me/${number}${text ? `?text=${text}` : ""}`;
-  btn.classList.remove("hidden");
 }
 
 function applyFooter(el, cfg) {
@@ -165,7 +144,6 @@ function applyConfig(cfg) {
   document.getElementById("thanks-title").textContent = cfg.thanks.title;
   document.getElementById("thanks-message").textContent = cfg.thanks.message;
   applyLogo(document.getElementById("thanks-logo"), cfg);
-  applyWhatsappButton(cfg);
   applyFooter(document.getElementById("thanks-footer"), cfg);
 
   const thanksContent = document.querySelector(".thanks__content");
@@ -173,7 +151,7 @@ function applyConfig(cfg) {
   setTextPosition(thanksContent, cfg.thanks.textPosition);
 }
 
-/** HTML de um único campo de pergunta, de acordo com o tipo configurado. */
+/** HTML de um único campo de pergunta extra, de acordo com o tipo configurado (igual ao form de vagas). */
 function renderQuestionField(q) {
   const name = `extra_${q.id}`;
   const label = escapeHtml(q.label);
@@ -258,11 +236,11 @@ function buildExtraPages(pages) {
 function buildProgressBars() {
   document.querySelectorAll(".progress").forEach((container) => {
     const stepEl = container.closest(".step");
-    const currentStep = Number(stepEl.dataset.step);
+    const currentStepNum = Number(stepEl.dataset.step);
     container.innerHTML = "";
     for (let i = 1; i <= TOTAL_STEPS; i++) {
       const bar = document.createElement("div");
-      bar.className = "progress__bar" + (i <= currentStep ? " is-filled" : "");
+      bar.className = "progress__bar" + (i <= currentStepNum ? " is-filled" : "");
       container.appendChild(bar);
     }
   });
@@ -285,12 +263,43 @@ function showStep(n) {
     el.classList.toggle("hidden", Number(el.dataset.step) !== n);
   });
   document.getElementById("btn-back").style.visibility = n === 1 ? "hidden" : "visible";
-  document.getElementById("btn-next").textContent = n === TOTAL_STEPS ? "Enviar" : "Avançar";
+  document.getElementById("btn-next").textContent = n === TOTAL_STEPS ? "Enviar indicação" : "Continuar";
   window.scrollTo(0, 0);
 }
 
 function setFieldError(fieldEl, hasError) {
   fieldEl.classList.toggle("has-error", hasError);
+}
+
+/**
+ * Etapa 3 é condicional: mostra só o grupo de campos do tipo escolhido na etapa 1, e liga/desliga
+ * a obrigatoriedade dos campos marcados com data-required-if-active só nesse grupo — assim quem
+ * indica um seguro não é obrigado a preencher nada de imóvel, e vice-versa.
+ */
+const TITLE_BY_TIPO = {
+  imovel_venda: "Sobre o imóvel",
+  imovel_locacao: "Sobre o imóvel",
+  seguro: "Sobre o seguro",
+  consorcio: "Sobre o consórcio",
+};
+
+function updateConditionalGroup(tipo) {
+  document.querySelectorAll(".cond-group").forEach((group) => {
+    const conds = (group.dataset.cond || "").split(",");
+    const active = conds.includes(tipo);
+    group.classList.toggle("hidden", !active);
+
+    group.querySelectorAll("input[data-required-if-active], textarea[data-required-if-active]").forEach((input) => {
+      input.required = active;
+    });
+    group.querySelectorAll(".options[data-required-if-active]").forEach((optGroup) => {
+      if (active) optGroup.removeAttribute("data-optional");
+      else optGroup.dataset.optional = "true";
+    });
+  });
+
+  const titleEl = document.getElementById("step3-title");
+  if (titleEl) titleEl.textContent = TITLE_BY_TIPO[tipo] || "Conte um pouco sobre a oportunidade";
 }
 
 /** Valida a etapa atual; retorna true se pode avançar. */
@@ -299,9 +308,15 @@ function validateStep(n) {
   const stepEl = document.querySelector(`.step[data-step="${n}"]`);
   if (!stepEl) return true;
 
-  // inputs de texto/textarea simples com atributo required
+  // inputs de texto/textarea simples com atributo required (e checkbox único de confirmação)
   stepEl.querySelectorAll("input[required], textarea[required]").forEach((input) => {
     const fieldEl = input.closest(".field");
+    if (input.type === "checkbox") {
+      const ok = input.checked;
+      setFieldError(fieldEl, !ok);
+      if (!ok) valid = false;
+      return;
+    }
     const ok = input.value.trim().length > 0;
     if (input.type === "email" && ok) {
       const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim());
@@ -351,35 +366,53 @@ function collectExtraRespostas(fd) {
   return result;
 }
 
+/** Só os campos do tipo escolhido entram no "detalhes" — os das outras abas ficam de fora. */
+function collectDetalhes(fd, tipo) {
+  if (tipo === "imovel_venda" || tipo === "imovel_locacao") {
+    return {
+      disponibilidadeImovel: fd.get("disponibilidadeImovel") || "",
+      cidadeBairro: fd.get("cidadeBairro") || "",
+      tipoImovel: fd.get("tipoImovel") || "",
+      valorImovel: fd.get("valorImovel") || "",
+      detalhesImovel: fd.get("detalhesImovel") || "",
+    };
+  }
+  if (tipo === "seguro") {
+    return {
+      tipoSeguro: fd.get("tipoSeguro") || "",
+      detalhesSeguro: fd.get("detalhesSeguro") || "",
+    };
+  }
+  if (tipo === "consorcio") {
+    return {
+      tipoConsorcio: fd.get("tipoConsorcio") || "",
+      valorConsorcio: fd.get("valorConsorcio") || "",
+      detalhesConsorcio: fd.get("detalhesConsorcio") || "",
+    };
+  }
+  return {};
+}
+
 function collectFormData() {
   const form = document.getElementById("form");
   const fd = new FormData(form);
+  const tipo = fd.get("tipo") || "";
 
   return {
-    nome: fd.get("nome") || "",
-    email: fd.get("email") || "",
-    whatsapp: fd.get("whatsapp") || "",
-    cidade: fd.get("cidade") || "",
-    creci: fd.get("creci") || "",
-    experiencia: fd.get("experiencia") || "",
-    captacao: buildCaptacaoText(fd),
-    regioes: fd.get("regioes") || "",
-    tiposImovel: fd.getAll("tiposImovel"),
-    disponibilidade: fd.get("disponibilidade") || "",
-    veiculo: fd.get("veiculo") || "",
-    portfolio: fd.get("portfolio") || "",
-    remuneracao: fd.get("remuneracao") || "",
-    sobreVoce: fd.get("sobreVoce") || "",
-    lgpd: fd.get("lgpd") || "",
+    tipo,
+    nomeIndicado: fd.get("nomeIndicado") || "",
+    whatsappIndicado: fd.get("whatsappIndicado") || "",
+    emailIndicado: fd.get("emailIndicado") || "",
+    comoConhece: fd.get("comoConhece") || "",
+    detalhes: collectDetalhes(fd, tipo),
+    nomeIndicador: fd.get("nomeIndicador") || "",
+    whatsappIndicador: fd.get("whatsappIndicador") || "",
+    emailIndicador: fd.get("emailIndicador") || "",
+    autorizaContato: fd.get("autorizaContato") || "",
+    confirmaPermissao: fd.get("confirmaPermissao") ? "Sim" : "",
     extraRespostas: collectExtraRespostas(fd),
     website: fd.get("website") || "", // honeypot
   };
-}
-
-function buildCaptacaoText(fd) {
-  const resposta = fd.get("captacaoResposta") || "";
-  const comentario = (fd.get("captacaoComentario") || "").trim();
-  return comentario ? `${resposta} — ${comentario}` : resposta;
 }
 
 async function submitForm() {
@@ -393,7 +426,7 @@ async function submitForm() {
   btnNext.innerHTML = '<span class="spinner"></span>Enviando…';
 
   try {
-    const res = await fetch("/api/submit", {
+    const res = await fetch("/api/indicacao/submit", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(collectFormData()),
@@ -401,7 +434,7 @@ async function submitForm() {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok || !data.ok) {
-      throw new Error(data.error || "Não foi possível enviar sua candidatura. Tente novamente.");
+      throw new Error(data.error || "Não foi possível enviar a indicação. Tente novamente.");
     }
 
     showScreen("thanks");
@@ -424,6 +457,10 @@ async function init() {
   applyConfig(cfg);
   buildExtraPages(extraPages);
   buildProgressBars();
+
+  document.querySelectorAll('input[name="tipo"]').forEach((input) => {
+    input.addEventListener("change", () => updateConditionalGroup(input.value));
+  });
 
   // usado só pela pré-visualização no /admin: pula direto pro final, sem preencher nada
   const previewSkip = new URLSearchParams(window.location.search).get("preview_skip") === "1";

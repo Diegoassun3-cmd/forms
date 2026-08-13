@@ -93,12 +93,122 @@ async function handleSubmit(request, env) {
   return jsonResponse({ ok: true });
 }
 
+const TIPOS_INDICACAO = ["imovel_venda", "imovel_locacao", "seguro", "consorcio"];
+
+/** Recebe uma indicação (formulário /indicacao) e grava na tabela `indicacoes`. */
+async function handleSubmitIndicacao(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  const requiredFields = ["tipo", "nomeIndicado", "whatsappIndicado", "nomeIndicador", "whatsappIndicador", "autorizaContato"];
+  for (const field of requiredFields) {
+    if (!isNonEmptyString(body[field])) {
+      return jsonResponse({ ok: false, error: `Campo obrigatório ausente: ${field}` }, 400);
+    }
+  }
+
+  if (!TIPOS_INDICACAO.includes(body.tipo)) {
+    return jsonResponse({ ok: false, error: "Tipo de indicação inválido." }, 400);
+  }
+
+  const confirmaPermissao = String(body.confirmaPermissao || "").trim().toLowerCase();
+  if (confirmaPermissao !== "sim") {
+    return jsonResponse(
+      { ok: false, error: "É necessário confirmar a autorização para compartilhar os dados dessa pessoa." },
+      400
+    );
+  }
+
+  if (isNonEmptyString(body.website)) {
+    return jsonResponse({ ok: true }); // honeypot: finge sucesso, não grava
+  }
+
+  const detalhes = body.detalhes && typeof body.detalhes === "object" ? body.detalhes : {};
+  if (body.tipo === "imovel_venda" || body.tipo === "imovel_locacao") {
+    if (!isNonEmptyString(detalhes.cidadeBairro) || !isNonEmptyString(detalhes.tipoImovel)) {
+      return jsonResponse({ ok: false, error: "Preencha as informações do imóvel." }, 400);
+    }
+  } else if (body.tipo === "seguro") {
+    if (!isNonEmptyString(detalhes.tipoSeguro)) {
+      return jsonResponse({ ok: false, error: "Preencha as informações do seguro." }, 400);
+    }
+  } else if (body.tipo === "consorcio") {
+    if (!isNonEmptyString(detalhes.tipoConsorcio)) {
+      return jsonResponse({ ok: false, error: "Preencha as informações do consórcio." }, 400);
+    }
+  }
+
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (isNonEmptyString(body.emailIndicado) && !emailRe.test(body.emailIndicado.trim())) {
+    return jsonResponse({ ok: false, error: "E-mail da pessoa indicada inválido." }, 400);
+  }
+  if (isNonEmptyString(body.emailIndicador) && !emailRe.test(body.emailIndicador.trim())) {
+    return jsonResponse({ ok: false, error: "Seu e-mail é inválido." }, 400);
+  }
+
+  if (!env.DB) {
+    return jsonResponse(
+      { ok: false, error: "Banco de dados não configurado neste Worker (falta o binding DB)." },
+      500
+    );
+  }
+
+  const now = new Date().toISOString();
+  const extraRespostas = body.extraRespostas && typeof body.extraRespostas === "object" ? body.extraRespostas : {};
+
+  try {
+    await env.DB.prepare(
+      `INSERT INTO indicacoes
+        (tipo, nome_indicado, whatsapp_indicado, email_indicado, como_conhece, detalhes,
+         nome_indicador, whatsapp_indicador, email_indicador, autoriza_contato, confirma_permissao,
+         criado_em, extra_respostas)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        body.tipo,
+        body.nomeIndicado.trim(),
+        body.whatsappIndicado.trim(),
+        (body.emailIndicado || "").trim() || null,
+        (body.comoConhece || "").trim() || null,
+        Object.keys(detalhes).length ? JSON.stringify(detalhes) : null,
+        body.nomeIndicador.trim(),
+        body.whatsappIndicador.trim(),
+        (body.emailIndicador || "").trim() || null,
+        body.autorizaContato.trim(),
+        "Sim",
+        now,
+        Object.keys(extraRespostas).length ? JSON.stringify(extraRespostas) : null
+      )
+      .run();
+  } catch (err) {
+    return jsonResponse({ ok: false, error: "Erro ao salvar indicação." }, 500);
+  }
+
+  return jsonResponse({ ok: true });
+}
+
 function isAuthorizedAdmin(request, env) {
   const token = request.headers.get("x-admin-token") || "";
   return Boolean(env.ADMIN_TOKEN) && token === env.ADMIN_TOKEN;
 }
 
-async function handleAdminData(request, env) {
+/** Duas "instâncias" de formulário, cada uma com sua própria tabela de respostas e de config. */
+const FORM_TABLES = {
+  vagas: { data: "candidaturas", config: "site_config" },
+  indicacao: { data: "indicacoes", config: "indicacao_config" },
+};
+
+function resolveForm(url) {
+  const f = url.searchParams.get("form");
+  return Object.prototype.hasOwnProperty.call(FORM_TABLES, f) ? f : "vagas";
+}
+
+/** Lista as respostas de um formulário para a área administrativa (protegida por token). */
+async function handleAdminData(request, env, table) {
   if (!isAuthorizedAdmin(request, env)) {
     return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
   }
@@ -108,14 +218,14 @@ async function handleAdminData(request, env) {
   }
 
   const { results } = await env.DB.prepare(
-    "SELECT * FROM candidaturas ORDER BY criado_em DESC"
+    `SELECT * FROM ${table} ORDER BY criado_em DESC`
   ).all();
 
   return jsonResponse({ ok: true, rows: results });
 }
 
-/** Exclui uma candidatura pelo id (protegida por token). */
-async function handleAdminDelete(request, env, id) {
+/** Exclui uma resposta pelo id (protegida por token). */
+async function handleAdminDelete(request, env, table, id) {
   if (!isAuthorizedAdmin(request, env)) {
     return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
   }
@@ -128,7 +238,7 @@ async function handleAdminDelete(request, env, id) {
     return jsonResponse({ ok: false, error: "ID inválido." }, 400);
   }
 
-  await env.DB.prepare("DELETE FROM candidaturas WHERE id = ?").bind(id).run();
+  await env.DB.prepare(`DELETE FROM ${table} WHERE id = ?`).bind(id).run();
 
   return jsonResponse({ ok: true });
 }
@@ -179,6 +289,7 @@ function sanitizeConfig(input) {
   const logo = input && input.logo ? input.logo : {};
 
   return {
+    footer: str(input && input.footer, 300),
     capa: {
       image: str(capa.image, 2000000), // aceita arquivo enviado (data URI), não só link
       position: ["top", "center", "bottom"].includes(capa.position) ? capa.position : "center",
@@ -209,19 +320,19 @@ function sanitizeConfig(input) {
   };
 }
 
-/** Retorna a configuração salva (ou null se ninguém salvou nada ainda). */
-async function handleGetConfig(env) {
+/** Retorna a configuração salva de um formulário (ou null se ninguém salvou nada ainda). */
+async function handleGetConfig(env, table) {
   if (!env.DB) return jsonResponse({ ok: true, config: null });
   try {
-    const row = await env.DB.prepare("SELECT data FROM site_config WHERE id = 1").first();
+    const row = await env.DB.prepare(`SELECT data FROM ${table} WHERE id = 1`).first();
     return jsonResponse({ ok: true, config: row ? JSON.parse(row.data) : null });
   } catch {
     return jsonResponse({ ok: true, config: null });
   }
 }
 
-/** Salva a configuração (protegido por token). */
-async function handleSaveConfig(request, env) {
+/** Salva a configuração de um formulário (protegido por token). */
+async function handleSaveConfig(request, env, table) {
   if (!isAuthorizedAdmin(request, env)) {
     return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
   }
@@ -240,7 +351,7 @@ async function handleSaveConfig(request, env) {
   const config = sanitizeConfig(body);
 
   await env.DB.prepare(
-    "INSERT INTO site_config (id, data) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data"
+    `INSERT INTO ${table} (id, data) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data`
   )
     .bind(JSON.stringify(config))
     .run();
@@ -258,21 +369,26 @@ export default {
         return await handleSubmit(request, env);
       }
 
+      if (url.pathname === "/api/indicacao/submit") {
+        if (request.method !== "POST") return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
+        return await handleSubmitIndicacao(request, env);
+      }
+
       if (url.pathname === "/api/config") {
-        return await handleGetConfig(env);
+        return await handleGetConfig(env, FORM_TABLES[resolveForm(url)].config);
       }
 
       if (url.pathname === "/admin/config" && request.method === "POST") {
-        return await handleSaveConfig(request, env);
+        return await handleSaveConfig(request, env, FORM_TABLES[resolveForm(url)].config);
       }
 
       if (url.pathname.startsWith("/admin/data/") && request.method === "DELETE") {
         const id = url.pathname.slice("/admin/data/".length);
-        return await handleAdminDelete(request, env, id);
+        return await handleAdminDelete(request, env, FORM_TABLES[resolveForm(url)].data, id);
       }
 
       if (url.pathname === "/admin/data") {
-        return await handleAdminData(request, env);
+        return await handleAdminData(request, env, FORM_TABLES[resolveForm(url)].data);
       }
 
       if (url.pathname === "/admin") {
@@ -293,9 +409,21 @@ export default {
         });
       }
 
+      if (url.pathname === "/indicacao.js") {
+        return new Response(INDICACAO_JS, {
+          headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store" },
+        });
+      }
+
       if (url.pathname === "/images/placeholder.svg") {
         return new Response(PLACEHOLDER_SVG, {
           headers: { "content-type": "image/svg+xml; charset=utf-8", "cache-control": "no-store" },
+        });
+      }
+
+      if (url.pathname === "/indicacao") {
+        return new Response(INDICACAO_HTML, {
+          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
         });
       }
 

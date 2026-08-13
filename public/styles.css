@@ -137,6 +137,14 @@ body {
   line-height: 1.5;
 }
 
+/* microcopy opcional de rodapé (tela inicial e de agradecimento) */
+.footer-note {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.4;
+}
+
 /* ---------- Botões ---------- */
 
 .btn {
@@ -298,6 +306,30 @@ body {
 }
 
 .field.has-error .field-error { display: block; }
+
+/* checkbox único de confirmação (ex.: autorização de compartilhamento de dados) */
+.field-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--texto);
+  line-height: 1.4;
+}
+
+.field-checkbox input[type="checkbox"] {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--azul);
+  flex: 0 0 auto;
+}
+
+.field.has-error .field-checkbox input[type="checkbox"] {
+  outline: 2px solid var(--erro);
+  outline-offset: 2px;
+}
 
 /* opções (radio / checkbox estilo cartão) */
 

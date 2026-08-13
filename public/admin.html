@@ -124,6 +124,14 @@
     }
     .drag-handle--disabled { cursor: default; opacity: 0.3; }
 
+    /* alternador de formulário (Vagas / Indicações) usado nas abas Páginas, Configurações e Visualizar */
+    .form-switch { display: inline-flex; gap: 4px; background: var(--creme); padding: 4px; border-radius: 999px; margin-bottom: 20px; }
+    .form-switch__btn {
+      border: none; background: none; padding: 8px 18px; border-radius: 999px;
+      font-family: inherit; font-weight: 700; font-size: 0.85rem; color: var(--texto-suave); cursor: pointer;
+    }
+    .form-switch__btn.is-active { background: var(--azul); color: #fff; }
+
     /* pré-visualização */
     .preview-toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
     .preview-frame-wrap {
@@ -145,6 +153,7 @@
     <div id="content" class="hidden">
       <div class="tabs">
         <button class="tab-btn is-active" type="button" data-tab="candidaturas">Candidaturas</button>
+        <button class="tab-btn" type="button" data-tab="indicacoes">Indicações</button>
         <button class="tab-btn" type="button" data-tab="paginas">Páginas</button>
         <button class="tab-btn" type="button" data-tab="config">Configurações</button>
         <button class="tab-btn" type="button" data-tab="preview">Visualizar</button>
@@ -189,12 +198,50 @@
         </div>
       </div>
 
+      <!-- ===================== ABA: INDICAÇÕES ===================== -->
+      <div class="tab-panel" id="tab-indicacoes">
+        <div class="admin__header">
+          <h1 class="admin__title">Indicações recebidas</h1>
+          <div class="toolbar">
+            <span class="admin__count" id="count-indicacoes"></span>
+            <button class="btn btn-ghost btn-small" id="btn-refresh-indicacoes" type="button">Atualizar</button>
+            <button class="btn btn-primary btn-small" id="btn-csv-indicacoes" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Indicado</th>
+                <th>WhatsApp indicado</th>
+                <th>E-mail indicado</th>
+                <th>Como conhece</th>
+                <th>Detalhes</th>
+                <th>Quem indicou</th>
+                <th>WhatsApp indicador</th>
+                <th>E-mail indicador</th>
+                <th>Autoriza contato</th>
+                <th>Perguntas extras</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rows-indicacoes"></tbody>
+          </table>
+        </div>
+      </div>
+
       <!-- ===================== ABA: PÁGINAS (visão geral) ===================== -->
       <div class="tab-panel" id="tab-paginas">
         <h1 class="admin__title" style="margin-bottom: 8px;">Páginas do formulário</h1>
+        <div class="form-switch" data-panel="paginas">
+          <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
+          <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+        </div>
         <p class="field__hint" style="margin-bottom: 20px;">
-          Nessa ordem que a pessoa candidata vê. As etapas 01–05 são fixas e não têm como reordenar.
-          Arraste as páginas extras (ícone ⠿) pra cima ou pra baixo pra mudar a ordem delas.
+          Nessa ordem que a pessoa vê o formulário selecionado acima. As etapas fixas não têm como
+          reordenar. Arraste as páginas extras (ícone ⠿) pra cima ou pra baixo pra mudar a ordem delas.
         </p>
         <ul class="pages-overview" id="pages-overview"></ul>
         <div class="toolbar" style="margin-top: 16px;">
@@ -206,7 +253,23 @@
 
       <!-- ===================== ABA: CONFIGURAÇÕES ===================== -->
       <div class="tab-panel" id="tab-config">
-        <h1 class="admin__title" style="margin-bottom: 20px;">Configurações do site</h1>
+        <h1 class="admin__title" style="margin-bottom: 8px;">Configurações do site</h1>
+        <div class="form-switch" data-panel="config">
+          <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
+          <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+        </div>
+        <p class="field__hint" style="margin-bottom: 20px;">
+          Cada formulário tem sua própria configuração — escolha acima qual você quer editar.
+        </p>
+
+        <div class="settings-section">
+          <h2>Rodapé</h2>
+          <p class="field__hint">Opcional. Uma frase pequena que aparece na tela inicial e na final.</p>
+          <div class="field">
+            <label class="field__label" for="cfg-footer">Texto do rodapé</label>
+            <input type="text" id="cfg-footer" placeholder="Solua Imobiliária — Imóveis • Consórcios • Seguros — 25 anos ao seu lado." />
+          </div>
+        </div>
 
         <div class="settings-section">
           <h2>Capa</h2>
@@ -350,14 +413,16 @@
               </select>
             </div>
           </div>
-          <div class="field">
-            <label class="field__label" for="cfg-thanks-whats-number">Número do WhatsApp (com DDD e país)</label>
-            <span class="field__hint">Só números, ex.: 5511999999999. Deixe em branco pra não mostrar o botão.</span>
-            <input type="text" id="cfg-thanks-whats-number" placeholder="5511999999999" />
-          </div>
-          <div class="field">
-            <label class="field__label" for="cfg-thanks-whats-message">Mensagem pronta do WhatsApp (opcional)</label>
-            <input type="text" id="cfg-thanks-whats-message" placeholder="Olá! Acabei de enviar minha candidatura..." />
+          <div id="cfg-whatsapp-fields">
+            <div class="field">
+              <label class="field__label" for="cfg-thanks-whats-number">Número do WhatsApp (com DDD e país)</label>
+              <span class="field__hint">Só números, ex.: 5511999999999. Deixe em branco pra não mostrar o botão.</span>
+              <input type="text" id="cfg-thanks-whats-number" placeholder="5511999999999" />
+            </div>
+            <div class="field">
+              <label class="field__label" for="cfg-thanks-whats-message">Mensagem pronta do WhatsApp (opcional)</label>
+              <input type="text" id="cfg-thanks-whats-message" placeholder="Olá! Acabei de enviar minha candidatura..." />
+            </div>
           </div>
         </div>
 
@@ -378,7 +443,11 @@
 
       <!-- ===================== ABA: VISUALIZAR ===================== -->
       <div class="tab-panel" id="tab-preview">
-        <h1 class="admin__title" style="margin-bottom: 14px;">Visualizar o formulário</h1>
+        <h1 class="admin__title" style="margin-bottom: 8px;">Visualizar o formulário</h1>
+        <div class="form-switch" data-panel="preview">
+          <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
+          <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+        </div>
         <div class="preview-toolbar">
           <button class="btn btn-ghost btn-small" id="btn-preview-refresh" type="button">Reiniciar (do começo)</button>
           <button class="btn btn-ghost btn-small" id="btn-preview-skip" type="button">Pular pro final (sem responder)</button>
@@ -394,11 +463,21 @@
   <script>
     const STORAGE_KEY = "solua_admin_token";
     let currentRows = [];
+    let currentRowsIndicacoes = [];
     let extraPagesDraft = [];
+
+    // Cada formulário tem sua própria config, tabela de respostas e página de pré-visualização.
+    const FORMS = {
+      vagas: { label: "Vagas", previewPath: "/", hasWhatsapp: true },
+      indicacao: { label: "Indicações", previewPath: "/indicacao", hasWhatsapp: false },
+    };
+    let currentForm = "vagas";
+    const configDraft = { vagas: null, indicacao: null };
 
     // Valores padrão exibidos enquanto nada foi salvo em Configurações ainda
     // (mesmos valores hoje fixos em public/app.js).
-    const DEFAULT_CONFIG = {
+    const DEFAULT_CONFIG_VAGAS = {
+      footer: "",
       capa: {
         image: "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600",
         position: "center",
@@ -432,13 +511,62 @@
       extraPages: [],
     };
 
-    const BUILTIN_STEPS = [
-      "01 · Seus dados",
-      "02 · Dados profissionais",
-      "03 · Mercado de atuação",
-      "04 · Disponibilidade",
-      "05 · Expectativas",
-    ];
+    // Idem, mas para o formulário de Indicações (public/indicacao.js tem os mesmos valores).
+    const DEFAULT_CONFIG_INDICACAO = {
+      footer: "Solua Imobiliária — Imóveis • Consórcios • Seguros — 25 anos ao seu lado.",
+      capa: {
+        image: "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600",
+        position: "center",
+        gradient: true,
+      },
+      logo: {
+        image: "",
+        position: "top-left",
+        size: "medio",
+      },
+      landing: {
+        title: "Uma indicação pode virar comissão.",
+        titleSize: "normal",
+        subtitle:
+          "Conhece alguém que quer vender ou alugar um imóvel, contratar um seguro ou fazer um " +
+          "consórcio? Indique para a Solua. A gente cuida do atendimento e, se fechar negócio, sua " +
+          "indicação pode virar comissão.",
+        buttonLabel: "Quero fazer uma indicação",
+        textAlign: "left",
+        textPosition: "bottom",
+      },
+      thanks: {
+        title: "Indicação recebida. 💙",
+        message:
+          "Agora é com a Solua. Nossa equipe vai entrar em contato com a pessoa indicada e entender " +
+          "como podemos ajudar. Se fechar negócio, sua indicação pode virar comissão. Obrigado por " +
+          "indicar a Solua.",
+        textAlign: "center",
+        textPosition: "center",
+        whatsappNumber: "",
+        whatsappMessage: "",
+      },
+      extraPages: [],
+    };
+
+    const FORM_DEFAULTS = { vagas: DEFAULT_CONFIG_VAGAS, indicacao: DEFAULT_CONFIG_INDICACAO };
+
+    const BUILTIN_STEPS_BY_FORM = {
+      vagas: [
+        "01 · Seus dados",
+        "02 · Dados profissionais",
+        "03 · Mercado de atuação",
+        "04 · Disponibilidade",
+        "05 · Expectativas",
+      ],
+      indicacao: [
+        "01 · O que você quer indicar?",
+        "02 · Quem você está indicando?",
+        "03 · Sobre a oportunidade",
+        "04 · Agora, sobre você",
+        "05 · Podemos entrar em contato?",
+      ],
+    };
 
     function fmtDate(iso) {
       try {
@@ -543,6 +671,101 @@
     }
 
     // ---------------------------------------------------------------
+    // Indicações (aba própria, mesma lógica da aba Candidaturas)
+    // ---------------------------------------------------------------
+
+    const TIPO_LABELS = {
+      imovel_venda: "Imóvel — venda",
+      imovel_locacao: "Imóvel — locação",
+      seguro: "Seguro",
+      consorcio: "Consórcio",
+    };
+
+    function fmtDetalhes(json) {
+      if (!json) return "";
+      try {
+        const obj = JSON.parse(json);
+        return Object.entries(obj)
+          .filter(([, v]) => v)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("\n");
+      } catch {
+        return "";
+      }
+    }
+
+    function renderRowsIndicacoes(rows) {
+      currentRowsIndicacoes = rows;
+      document.getElementById("count-indicacoes").textContent = rows.length + " indicação(ões)";
+      document.getElementById("rows-indicacoes").innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${esc(fmtDate(r.criado_em))}</td>
+            <td>${esc(TIPO_LABELS[r.tipo] || r.tipo)}</td>
+            <td>${esc(r.nome_indicado)}</td>
+            <td>${esc(r.whatsapp_indicado)}</td>
+            <td>${esc(r.email_indicado)}</td>
+            <td>${esc(r.como_conhece)}</td>
+            <td class="cell-wrap">${esc(fmtDetalhes(r.detalhes))}</td>
+            <td>${esc(r.nome_indicador)}</td>
+            <td>${esc(r.whatsapp_indicador)}</td>
+            <td>${esc(r.email_indicador)}</td>
+            <td>${esc(r.autoriza_contato)}</td>
+            <td class="cell-wrap">${esc(fmtExtraRespostas(r.extra_respostas))}</td>
+            <td><button class="btn-delete" type="button" data-delete-indicacao-id="${esc(r.id)}">Excluir</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function loadDataIndicacoes(token) {
+      const res = await fetch("/admin/data?form=indicacao", { headers: { "x-admin-token": token }, cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar indicações.");
+      }
+      const data = await res.json();
+      return data.rows || [];
+    }
+
+    async function deleteRowIndicacao(id, btn) {
+      const nome = currentRowsIndicacoes.find((r) => String(r.id) === String(id))?.nome_indicado || "essa indicação";
+      if (!confirm(`Excluir a indicação de "${nome}"? Essa ação não pode ser desfeita.`)) return;
+
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      btn.disabled = true;
+      btn.textContent = "Excluindo…";
+
+      try {
+        const res = await fetch(`/admin/data/${encodeURIComponent(id)}?form=indicacao`, {
+          method: "DELETE",
+          headers: { "x-admin-token": token },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Não foi possível excluir.");
+        }
+        currentRowsIndicacoes = currentRowsIndicacoes.filter((r) => String(r.id) !== String(id));
+        renderRowsIndicacoes(currentRowsIndicacoes);
+      } catch (err) {
+        alert(err.message || "Erro ao excluir.");
+        btn.disabled = false;
+        btn.textContent = "Excluir";
+      }
+    }
+
+    function toCsvIndicacoes(rows) {
+      const headers = [
+        "criado_em", "tipo", "nome_indicado", "whatsapp_indicado", "email_indicado", "como_conhece",
+        "detalhes", "nome_indicador", "whatsapp_indicador", "email_indicador", "autoriza_contato",
+        "confirma_permissao", "extra_respostas",
+      ];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    // ---------------------------------------------------------------
     // Páginas (visão geral)
     // ---------------------------------------------------------------
 
@@ -550,7 +773,7 @@
     function renderPagesOverview() {
       const fixedBefore = [
         { name: "Tela inicial", tag: "abertura" },
-        ...BUILTIN_STEPS.map((name) => ({ name, tag: "fixa" })),
+        ...BUILTIN_STEPS_BY_FORM[currentForm].map((name) => ({ name, tag: "fixa" })),
       ];
       const extras = extraPagesDraft.map((p, i) => ({
         name: `${String(6 + i).padStart(2, "0")} · ${p.title || "Página extra"}`,
@@ -729,7 +952,8 @@
     }
 
     /** Preenche buracos de uma config salva antes desta versão. */
-    function fillConfigDefaults(saved) {
+    function fillConfigDefaults(saved, formKey) {
+      const defaults = FORM_DEFAULTS[formKey] || DEFAULT_CONFIG_VAGAS;
       const s = saved || {};
       let extraPages = [];
       if (Array.isArray(s.extraPages)) {
@@ -738,15 +962,21 @@
         extraPages = [{ title: "Perguntas extras", questions: s.extraQuestions }];
       }
       return {
-        capa: { ...DEFAULT_CONFIG.capa, ...(s.capa || {}) },
-        logo: { ...DEFAULT_CONFIG.logo, ...(s.logo || {}) },
-        landing: { ...DEFAULT_CONFIG.landing, ...(s.landing || {}) },
-        thanks: { ...DEFAULT_CONFIG.thanks, ...(s.thanks || {}) },
+        footer: typeof s.footer === "string" ? s.footer : defaults.footer,
+        capa: { ...defaults.capa, ...(s.capa || {}) },
+        logo: { ...defaults.logo, ...(s.logo || {}) },
+        landing: { ...defaults.landing, ...(s.landing || {}) },
+        thanks: { ...defaults.thanks, ...(s.thanks || {}) },
         extraPages,
       };
     }
 
+    function updateConfigVisibilityForForm() {
+      document.getElementById("cfg-whatsapp-fields").classList.toggle("hidden", !FORMS[currentForm].hasWhatsapp);
+    }
+
     function applyConfigToForm(cfg) {
+      document.getElementById("cfg-footer").value = cfg.footer || "";
       setImagePreview(document.getElementById("cfg-capa-preview"), cfg.capa.image || "");
       document.getElementById("cfg-capa-status").textContent = "";
       document.getElementById("cfg-capa-position").value = cfg.capa.position || "center";
@@ -775,20 +1005,26 @@
       renderPagesOverview();
     }
 
-    async function loadConfigIntoForm() {
-      try {
-        const res = await fetch("/api/config", { cache: "no-store" });
-        const data = await res.json();
-        applyConfigToForm(fillConfigDefaults(data.config));
-      } catch {
-        applyConfigToForm(DEFAULT_CONFIG);
-      }
+    /** Busca a config salva dos dois formulários e guarda em configDraft. */
+    async function loadAllConfigs() {
+      await Promise.all(
+        Object.keys(FORMS).map(async (formKey) => {
+          try {
+            const res = await fetch(`/api/config?form=${formKey}`, { cache: "no-store" });
+            const data = await res.json();
+            configDraft[formKey] = fillConfigDefaults(data.config, formKey);
+          } catch {
+            configDraft[formKey] = { ...FORM_DEFAULTS[formKey] };
+          }
+        })
+      );
     }
 
     function collectConfigFromForm() {
       syncExtraPagesFromDom();
 
       return {
+        footer: document.getElementById("cfg-footer").value.trim(),
         capa: {
           image: document.getElementById("cfg-capa-preview").getAttribute("src") || "",
           position: document.getElementById("cfg-capa-position").value,
@@ -834,7 +1070,7 @@
       btn.textContent = "Salvando…";
 
       try {
-        const res = await fetch("/admin/config", {
+        const res = await fetch(`/admin/config?form=${currentForm}`, {
           method: "POST",
           headers: { "content-type": "application/json", "x-admin-token": token },
           body: JSON.stringify(payload),
@@ -843,6 +1079,7 @@
         if (!res.ok || !data.ok) {
           throw new Error(data.error || "Não foi possível salvar.");
         }
+        configDraft[currentForm] = data.config;
         applyConfigToForm(data.config);
         successEl.classList.add("is-visible");
         refreshPreview();
@@ -861,8 +1098,34 @@
 
     function refreshPreview() {
       const frame = document.getElementById("preview-frame");
-      frame.src = "/?admin-preview=" + Date.now();
+      document.getElementById("btn-preview-newtab").href = FORMS[currentForm].previewPath;
+      frame.src = FORMS[currentForm].previewPath + "?admin-preview=" + Date.now();
     }
+
+    // ---------------------------------------------------------------
+    // Alternador de formulário (Vagas / Indicações), compartilhado pelas
+    // abas Páginas, Configurações e Visualizar.
+    // ---------------------------------------------------------------
+
+    function setCurrentForm(formKey) {
+      if (!FORMS[formKey] || formKey === currentForm) return;
+
+      // guarda o que estiver na tela agora antes de trocar (evita perder edição não salva)
+      configDraft[currentForm] = collectConfigFromForm();
+
+      currentForm = formKey;
+      document.querySelectorAll(".form-switch__btn").forEach((b) => {
+        b.classList.toggle("is-active", b.dataset.form === currentForm);
+      });
+
+      applyConfigToForm(configDraft[currentForm] || FORM_DEFAULTS[currentForm]);
+      updateConfigVisibilityForForm();
+      refreshPreview();
+    }
+
+    document.querySelectorAll(".form-switch__btn").forEach((btn) => {
+      btn.addEventListener("click", () => setCurrentForm(btn.dataset.form));
+    });
 
     // ---------------------------------------------------------------
     // Login / navegação
@@ -872,12 +1135,15 @@
       const errorEl = document.getElementById("gate-error");
       errorEl.classList.remove("is-visible");
       try {
-        const rows = await loadData(token);
+        const [rows, rowsIndicacoes] = await Promise.all([loadData(token), loadDataIndicacoes(token)]);
         sessionStorage.setItem(STORAGE_KEY, token);
         document.getElementById("gate").classList.add("hidden");
         document.getElementById("content").classList.remove("hidden");
         renderRows(rows);
-        loadConfigIntoForm();
+        renderRowsIndicacoes(rowsIndicacoes);
+        await loadAllConfigs();
+        applyConfigToForm(configDraft[currentForm]);
+        updateConfigVisibilityForForm();
         refreshPreview();
       } catch (err) {
         errorEl.textContent = err.message;
@@ -912,6 +1178,24 @@
       link.click();
     });
 
+    document.getElementById("btn-refresh-indicacoes").addEventListener("click", async () => {
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      if (token) renderRowsIndicacoes(await loadDataIndicacoes(token));
+    });
+
+    document.getElementById("rows-indicacoes").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-delete-indicacao-id]");
+      if (btn) deleteRowIndicacao(btn.dataset.deleteIndicacaoId, btn);
+    });
+
+    document.getElementById("btn-csv-indicacoes").addEventListener("click", () => {
+      const blob = new Blob([toCsvIndicacoes(currentRowsIndicacoes)], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "indicacoes-solua.csv";
+      link.click();
+    });
+
     document.querySelectorAll(".tab-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
@@ -925,7 +1209,7 @@
     document.getElementById("btn-preview-refresh").addEventListener("click", refreshPreview);
 
     document.getElementById("btn-preview-skip").addEventListener("click", () => {
-      document.getElementById("preview-frame").src = "/?preview_skip=1&t=" + Date.now();
+      document.getElementById("preview-frame").src = FORMS[currentForm].previewPath + "?preview_skip=1&t=" + Date.now();
     });
 
     document.getElementById("btn-add-page").addEventListener("click", addPage);

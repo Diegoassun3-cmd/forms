@@ -1,0 +1,394 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Indicação Solua — indique e ganhe comissão</title>
+  <meta name="description" content="Indique um imóvel, seguro ou consórcio para a Solua Imóveis" />
+  <meta name="theme-color" content="#024ba5" />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===================== TELA INICIAL ===================== -->
+    <section class="hero" data-screen="landing">
+      <div class="hero__media">
+        <img class="hero__image" id="landing-image" src="/images/placeholder.svg" alt="" />
+        <div class="hero__overlay" id="landing-overlay"></div>
+        <img class="brand-logo hidden" id="landing-logo" alt="" />
+      </div>
+      <div class="hero__content">
+        <h1 class="hero__title" id="landing-title">Uma indicação pode virar comissão.</h1>
+        <p class="hero__subtitle" id="landing-subtitle">
+          Conhece alguém que quer vender ou alugar um imóvel, contratar um seguro ou fazer um
+          consórcio? Indique para a Solua. A gente cuida do atendimento e, se fechar negócio, sua
+          indicação pode virar comissão.
+        </p>
+        <button class="btn btn-primary" id="btn-start" type="button">Quero fazer uma indicação</button>
+        <p class="footer-note hidden" id="landing-footer"></p>
+      </div>
+    </section>
+
+    <!-- ===================== FORMULÁRIO (multi-etapas) ===================== -->
+    <form id="form" class="hidden" novalidate>
+
+      <!-- honeypot anti-spam -->
+      <div class="honeypot" aria-hidden="true">
+        <label>Não preencha este campo<input type="text" name="website" id="website" tabindex="-1" autocomplete="off" /></label>
+      </div>
+
+      <!-- ETAPA 1 -->
+      <section class="step" data-step="1">
+        <div class="progress"></div>
+        <span class="step__eyebrow">01</span>
+        <h2 class="step__title">O que você quer indicar?</h2>
+        <p class="step__desc">Qual oportunidade você tem para indicar? Selecione uma opção.</p>
+
+        <div class="field">
+          <div class="options" data-name="tipo" data-error="Selecione uma opção.">
+            <div class="option">
+              <input type="radio" name="tipo" id="tipo-imovel-venda" value="imovel_venda" />
+              <label for="tipo-imovel-venda"><span class="option__letter">🏠</span>Imóvel para venda</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="tipo" id="tipo-imovel-locacao" value="imovel_locacao" />
+              <label for="tipo-imovel-locacao"><span class="option__letter">🔑</span>Imóvel para locação</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="tipo" id="tipo-seguro" value="seguro" />
+              <label for="tipo-seguro"><span class="option__letter">🛡️</span>Seguro</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="tipo" id="tipo-consorcio" value="consorcio" />
+              <label for="tipo-consorcio"><span class="option__letter">💰</span>Consórcio</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="tipo">Selecione uma opção.</span>
+        </div>
+      </section>
+
+      <!-- ETAPA 2 -->
+      <section class="step hidden" data-step="2">
+        <div class="progress"></div>
+        <span class="step__eyebrow">02</span>
+        <h2 class="step__title">Quem você está indicando?</h2>
+        <p class="step__desc">Vamos conhecer essa pessoa.</p>
+
+        <div class="field">
+          <label class="field__label" for="nomeIndicado">Nome completo</label>
+          <input type="text" id="nomeIndicado" name="nomeIndicado" autocomplete="name" required />
+          <span class="field-error">Informe o nome completo da pessoa indicada.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="whatsappIndicado">WhatsApp</label>
+          <input type="tel" id="whatsappIndicado" name="whatsappIndicado" placeholder="(00) 00000-0000" autocomplete="tel" required />
+          <span class="field-error">Informe o WhatsApp da pessoa indicada.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="emailIndicado">E-mail</label>
+          <span class="field__hint">Campo opcional.</span>
+          <input type="email" id="emailIndicado" name="emailIndicado" autocomplete="email" />
+        </div>
+
+        <div class="field">
+          <label class="field__label">Como você conhece essa pessoa?</label>
+          <div class="options" data-name="comoConhece" data-error="Selecione uma opção.">
+            <div class="option">
+              <input type="radio" name="comoConhece" id="conhece-a" value="Amigo(a)" />
+              <label for="conhece-a"><span class="option__letter">A</span>Amigo(a)</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="comoConhece" id="conhece-b" value="Familiar" />
+              <label for="conhece-b"><span class="option__letter">B</span>Familiar</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="comoConhece" id="conhece-c" value="Cliente" />
+              <label for="conhece-c"><span class="option__letter">C</span>Cliente</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="comoConhece" id="conhece-d" value="Colega de trabalho" />
+              <label for="conhece-d"><span class="option__letter">D</span>Colega de trabalho</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="comoConhece" id="conhece-e" value="Conhecido(a)" />
+              <label for="conhece-e"><span class="option__letter">E</span>Conhecido(a)</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="comoConhece" id="conhece-f" value="Outro" />
+              <label for="conhece-f"><span class="option__letter">F</span>Outro</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="comoConhece">Selecione uma opção.</span>
+        </div>
+      </section>
+
+      <!-- ETAPA 3 (condicional: muda de acordo com o tipo escolhido na etapa 1) -->
+      <section class="step hidden" data-step="3">
+        <div class="progress"></div>
+        <span class="step__eyebrow">03</span>
+        <h2 class="step__title" id="step3-title">Conte um pouco sobre a oportunidade</h2>
+
+        <!-- imóvel (venda ou locação) -->
+        <div class="cond-group hidden" data-cond="imovel_venda,imovel_locacao">
+          <div class="field">
+            <label class="field__label">O imóvel está disponível para</label>
+            <div class="options" data-name="disponibilidadeImovel" data-error="Selecione uma opção." data-optional="true">
+              <div class="option">
+                <input type="radio" name="disponibilidadeImovel" id="dispimv-a" value="Venda" />
+                <label for="dispimv-a"><span class="option__letter">A</span>Venda</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="disponibilidadeImovel" id="dispimv-b" value="Locação" />
+                <label for="dispimv-b"><span class="option__letter">B</span>Locação</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="disponibilidadeImovel" id="dispimv-c" value="Venda e locação" />
+                <label for="dispimv-c"><span class="option__letter">C</span>Venda e locação</label>
+              </div>
+            </div>
+            <span class="field-error" data-for="disponibilidadeImovel">Selecione uma opção.</span>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="cidadeBairro">Onde fica o imóvel?</label>
+            <span class="field__hint">Cidade + bairro.</span>
+            <input type="text" id="cidadeBairro" name="cidadeBairro" data-required-if-active="true" />
+            <span class="field-error">Informe cidade e bairro do imóvel.</span>
+          </div>
+
+          <div class="field">
+            <label class="field__label">Que tipo de imóvel é?</label>
+            <div class="options" data-name="tipoImovel" data-error="Selecione uma opção." data-optional="true" data-required-if-active="true">
+              <div class="option">
+                <input type="radio" name="tipoImovel" id="tipoimv-a" value="Casa" />
+                <label for="tipoimv-a"><span class="option__letter">A</span>Casa</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoImovel" id="tipoimv-b" value="Apartamento" />
+                <label for="tipoimv-b"><span class="option__letter">B</span>Apartamento</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoImovel" id="tipoimv-c" value="Terreno" />
+                <label for="tipoimv-c"><span class="option__letter">C</span>Terreno</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoImovel" id="tipoimv-d" value="Comercial" />
+                <label for="tipoimv-d"><span class="option__letter">D</span>Comercial</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoImovel" id="tipoimv-e" value="Rural" />
+                <label for="tipoimv-e"><span class="option__letter">E</span>Rural</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoImovel" id="tipoimv-f" value="Outro" />
+                <label for="tipoimv-f"><span class="option__letter">F</span>Outro</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoImovel" id="tipoimv-g" value="Não sei" />
+                <label for="tipoimv-g"><span class="option__letter">G</span>Não sei</label>
+              </div>
+            </div>
+            <span class="field-error" data-for="tipoImovel">Selecione uma opção.</span>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="valorImovel">Você sabe o valor aproximado?</label>
+            <span class="field__hint">Opcional. Ex.: R$ 450.000.</span>
+            <input type="text" id="valorImovel" name="valorImovel" placeholder="R$" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="detalhesImovel">Conte um pouco mais sobre o imóvel</label>
+            <span class="field__hint">
+              Opcional. Ex.: apartamento de 3 quartos no Cambuí, casa em condomínio, imóvel comercial etc.
+            </span>
+            <textarea id="detalhesImovel" name="detalhesImovel" rows="3"></textarea>
+          </div>
+        </div>
+
+        <!-- seguro -->
+        <div class="cond-group hidden" data-cond="seguro">
+          <div class="field">
+            <label class="field__label">Qual tipo de seguro essa pessoa procura?</label>
+            <div class="options" data-name="tipoSeguro" data-error="Selecione uma opção." data-optional="true" data-required-if-active="true">
+              <div class="option">
+                <input type="radio" name="tipoSeguro" id="segtipo-a" value="Automóvel" />
+                <label for="segtipo-a"><span class="option__letter">A</span>Automóvel</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoSeguro" id="segtipo-b" value="Residencial" />
+                <label for="segtipo-b"><span class="option__letter">B</span>Residencial</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoSeguro" id="segtipo-c" value="Vida" />
+                <label for="segtipo-c"><span class="option__letter">C</span>Vida</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoSeguro" id="segtipo-d" value="Empresarial" />
+                <label for="segtipo-d"><span class="option__letter">D</span>Empresarial</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoSeguro" id="segtipo-e" value="Outro" />
+                <label for="segtipo-e"><span class="option__letter">E</span>Outro</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoSeguro" id="segtipo-f" value="Não sabe" />
+                <label for="segtipo-f"><span class="option__letter">F</span>Não sabe</label>
+              </div>
+            </div>
+            <span class="field-error" data-for="tipoSeguro">Selecione uma opção.</span>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="detalhesSeguro">Você sabe o que ela procura ou precisa proteger?</label>
+            <span class="field__hint">
+              Opcional. Ex.: comprou um carro novo, quer proteger a empresa, está procurando seguro
+              residencial etc.
+            </span>
+            <textarea id="detalhesSeguro" name="detalhesSeguro" rows="3"></textarea>
+          </div>
+        </div>
+
+        <!-- consórcio -->
+        <div class="cond-group hidden" data-cond="consorcio">
+          <div class="field">
+            <label class="field__label">O que essa pessoa gostaria de adquirir?</label>
+            <div class="options" data-name="tipoConsorcio" data-error="Selecione uma opção." data-optional="true" data-required-if-active="true">
+              <div class="option">
+                <input type="radio" name="tipoConsorcio" id="constipo-a" value="Imóvel" />
+                <label for="constipo-a"><span class="option__letter">A</span>Imóvel</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoConsorcio" id="constipo-b" value="Automóvel" />
+                <label for="constipo-b"><span class="option__letter">B</span>Automóvel</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoConsorcio" id="constipo-c" value="Caminhão / veículo pesado" />
+                <label for="constipo-c"><span class="option__letter">C</span>Caminhão / veículo pesado</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoConsorcio" id="constipo-d" value="Outro" />
+                <label for="constipo-d"><span class="option__letter">D</span>Outro</label>
+              </div>
+              <div class="option">
+                <input type="radio" name="tipoConsorcio" id="constipo-e" value="Ainda não sabe" />
+                <label for="constipo-e"><span class="option__letter">E</span>Ainda não sabe</label>
+              </div>
+            </div>
+            <span class="field-error" data-for="tipoConsorcio">Selecione uma opção.</span>
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="valorConsorcio">Você sabe o valor aproximado do bem ou crédito desejado?</label>
+            <span class="field__hint">Opcional. Ex.: R$ 80.000.</span>
+            <input type="text" id="valorConsorcio" name="valorConsorcio" placeholder="R$" />
+          </div>
+
+          <div class="field">
+            <label class="field__label" for="detalhesConsorcio">Alguma informação que possa ajudar nossa equipe?</label>
+            <span class="field__hint">
+              Opcional. Ex.: quer comprar um apartamento, trocar de carro, investir em um imóvel etc.
+            </span>
+            <textarea id="detalhesConsorcio" name="detalhesConsorcio" rows="3"></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- ETAPA 4 -->
+      <section class="step hidden" data-step="4">
+        <div class="progress"></div>
+        <span class="step__eyebrow">04</span>
+        <h2 class="step__title">Agora, sobre você</h2>
+        <p class="step__desc">Quem está fazendo a indicação?</p>
+
+        <div class="field">
+          <label class="field__label" for="nomeIndicador">Seu nome</label>
+          <input type="text" id="nomeIndicador" name="nomeIndicador" autocomplete="name" required />
+          <span class="field-error">Informe seu nome.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="whatsappIndicador">Seu WhatsApp</label>
+          <input type="tel" id="whatsappIndicador" name="whatsappIndicador" placeholder="(00) 00000-0000" autocomplete="tel" required />
+          <span class="field-error">Informe seu WhatsApp.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="emailIndicador">Seu e-mail</label>
+          <span class="field__hint">Opcional.</span>
+          <input type="email" id="emailIndicador" name="emailIndicador" autocomplete="email" />
+        </div>
+      </section>
+
+      <!-- ETAPA 5 -->
+      <section class="step hidden" data-step="5">
+        <div class="progress"></div>
+        <span class="step__eyebrow">05</span>
+        <h2 class="step__title">Podemos entrar em contato?</h2>
+
+        <div class="field">
+          <label class="field__label">
+            Você autoriza a Solua a entrar em contato com a pessoa indicada para apresentar nossos
+            serviços e entender a necessidade dela?
+          </label>
+          <div class="options simnao" data-name="autorizaContato" data-error="Selecione uma opção.">
+            <div class="option">
+              <input type="radio" name="autorizaContato" id="autoriza-sim" value="Sim" />
+              <label for="autoriza-sim">Sim, autorizo.</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="autorizaContato" id="autoriza-nao" value="Não" />
+              <label for="autoriza-nao">Não.</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="autorizaContato">Selecione uma opção.</span>
+        </div>
+
+        <div class="field">
+          <label class="field-checkbox" for="confirmaPermissao">
+            <input type="checkbox" id="confirmaPermissao" name="confirmaPermissao" value="Sim" required />
+            Você confirma que possui autorização para compartilhar os dados de contato dessa pessoa
+            com a Solua?
+          </label>
+          <span class="field-error">É necessário confirmar para enviar a indicação.</span>
+        </div>
+
+        <div class="submit-error" id="submit-error"></div>
+      </section>
+
+      <!-- As páginas extras configuráveis pelo /admin são inseridas aqui dinamicamente pelo indicacao.js -->
+
+      <div class="actions">
+        <button class="btn btn-ghost" id="btn-back" type="button">Voltar</button>
+        <button class="btn btn-primary" id="btn-next" type="button">Continuar</button>
+      </div>
+    </form>
+
+    <!-- ===================== TELA DE SUCESSO ===================== -->
+    <section class="thanks hidden" data-screen="thanks">
+      <div class="hero__media">
+        <img class="hero__image" id="thanks-image" src="/images/placeholder.svg" alt="" />
+        <div class="hero__overlay" id="thanks-overlay"></div>
+        <img class="brand-logo hidden" id="thanks-logo" alt="" />
+      </div>
+      <div class="thanks__content">
+        <div class="thanks__check">✓</div>
+        <h1 class="thanks__title" id="thanks-title">Indicação recebida. 💙</h1>
+        <p class="thanks__message" id="thanks-message">
+          Agora é com a Solua. Nossa equipe vai entrar em contato com a pessoa indicada e entender
+          como podemos ajudar. Se fechar negócio, sua indicação pode virar comissão. Obrigado por
+          indicar a Solua.
+        </p>
+        <p class="footer-note hidden" id="thanks-footer"></p>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/indicacao.js"></script>
+</body>
+</html>
