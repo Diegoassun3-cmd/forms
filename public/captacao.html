@@ -98,8 +98,10 @@
 
         <div class="field">
           <label class="field__label" for="cep">CEP</label>
-          <input type="text" id="cep" name="cep" placeholder="00000-000" required />
+          <span class="field__hint">Digite o CEP que a gente busca o endereço automaticamente.</span>
+          <input type="text" id="cep" name="cep" placeholder="00000-000" inputmode="numeric" autocomplete="postal-code" required />
           <span class="field-error">Informe o CEP do imóvel.</span>
+          <span class="field__hint status" id="cep-status"></span>
         </div>
 
         <div class="field">

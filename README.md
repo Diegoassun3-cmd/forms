@@ -12,7 +12,9 @@ estáticos, gravando cada resposta em tabelas próprias no banco D1.
   indicação", ao final da etapa 3, guarda a indicação atual e limpa os campos pra receber a próxima.
 - **Captação** (`/captacao`) — cadastro de imóvel pra venda ou locação: 5 etapas (dados de quem
   cadastra, objetivo, endereço, tipo de imóvel, valor + LGPD), com o campo "Valor pretendido"
-  aparecendo só quando a pessoa responde que já tem um valor em mente.
+  aparecendo só quando a pessoa responde que já tem um valor em mente. Ao digitar o CEP, endereço,
+  bairro e cidade são preenchidos automaticamente via [ViaCEP](https://viacep.com.br/) (API pública,
+  sem chave) — se o CEP não for encontrado, a pessoa preenche manualmente sem travar o formulário.
 
 ## Estrutura
 

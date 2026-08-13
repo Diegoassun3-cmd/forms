@@ -267,6 +267,15 @@ body {
   line-height: 1.4;
 }
 
+/* status de busca automática (ex.: endereço pelo CEP) — sem margin extra, some quando vazio */
+.field__hint.status {
+  margin-bottom: 0;
+  margin-top: 6px;
+}
+.field__hint.status:empty { display: none; }
+.field__hint.status.is-error { color: var(--erro); }
+.field__hint.status.is-success { color: var(--azul); }
+
 .field input[type="text"],
 .field input[type="email"],
 .field input[type="tel"],

@@ -414,6 +414,57 @@ async function submitForm() {
   }
 }
 
+/* ---------- busca automática de endereço pelo CEP (ViaCEP) ---------- */
+
+function formatCep(value) {
+  const digits = String(value || "").replace(/\D/g, "").slice(0, 8);
+  return digits.length > 5 ? `${digits.slice(0, 5)}-${digits.slice(5)}` : digits;
+}
+
+function setCepStatus(text, kind) {
+  const el = document.getElementById("cep-status");
+  if (!el) return;
+  el.textContent = text || "";
+  el.classList.toggle("is-error", kind === "error");
+  el.classList.toggle("is-success", kind === "success");
+}
+
+async function buscarEnderecoPorCep(digits) {
+  setCepStatus("Buscando endereço…");
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+    const data = await res.json();
+    if (!res.ok || data.erro) {
+      setCepStatus("CEP não encontrado — preencha o endereço manualmente.", "error");
+      return;
+    }
+    if (data.logradouro) document.getElementById("endereco").value = data.logradouro;
+    if (data.bairro) document.getElementById("bairro").value = data.bairro;
+    if (data.localidade) {
+      document.getElementById("cidade").value = data.uf ? `${data.localidade} / ${data.uf}` : data.localidade;
+    }
+    setCepStatus("Endereço preenchido automaticamente.", "success");
+    // já preencheu endereço/bairro/cidade — leva o foco pro número, que a pessoa ainda precisa informar
+    document.getElementById("numero").focus();
+  } catch {
+    setCepStatus("Não foi possível buscar o endereço agora — preencha manualmente.", "error");
+  }
+}
+
+function initCepLookup() {
+  const cepInput = document.getElementById("cep");
+  if (!cepInput) return;
+  cepInput.addEventListener("input", (e) => {
+    const digits = e.target.value.replace(/\D/g, "").slice(0, 8);
+    e.target.value = formatCep(e.target.value);
+    if (digits.length === 8) {
+      buscarEnderecoPorCep(digits);
+    } else {
+      setCepStatus("");
+    }
+  });
+}
+
 async function init() {
   const cfg = await loadConfig();
 
@@ -427,6 +478,8 @@ async function init() {
   document.querySelectorAll('input[name="temValor"]').forEach((input) => {
     input.addEventListener("change", () => updateValorGroup(input.value));
   });
+
+  initCepLookup();
 
   // usado só pela pré-visualização no /admin: pula direto pro final, sem preencher nada
   const previewSkip = new URLSearchParams(window.location.search).get("preview_skip") === "1";
