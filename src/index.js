@@ -1123,6 +1123,10 @@ export default {
         return env.ASSETS.fetch(new Request(new URL("/captacao.html", request.url), request));
       }
 
+      if (url.pathname === "/mail") {
+        return env.ASSETS.fetch(new Request(new URL("/mail.html", request.url), request));
+      }
+
       return env.ASSETS.fetch(request);
     } catch (err) {
       // Nunca deixa a página de erro genérica da Cloudflare aparecer sem explicação:

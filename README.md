@@ -27,6 +27,7 @@ public/               → front-end (HTML/CSS/JS puro, sem build step)
   captacao.html         → telas do formulário de Captação de imóveis
   captacao.js           → CONFIG, navegação e validação do form de Captação (com campo condicional)
   admin.html           → painel administrativo (protegido por token) — cobre os três formulários
+  mail.html             → página própria de Email Marketing (mesmo token, dados iguais à aba do admin)
   styles.css           → estilos compartilhados pelos três formulários e pela tela inicial/final
   images/              → fotos padrão
 src/index.js           → Worker: serve os assets e expõe as rotas de API (D1)
@@ -116,10 +117,13 @@ Duas formas de consultar as respostas:
    `SELECT * FROM indicacoes ORDER BY criado_em DESC;` ou
    `SELECT * FROM captacoes ORDER BY criado_em DESC;`.
 
-## Email marketing (aba própria, depois de Visualizar)
+## Email marketing (`/mail`, e também na aba própria dentro do `/admin`)
 
-Um disparador de e-mail em marketing embutido no mesmo admin, usando a
-[Resend](https://resend.com) como provedor de envio (API simples, sem SMTP, tem plano gratuito).
+Um disparador de e-mail em marketing, usando a [Resend](https://resend.com) como provedor de envio
+(API simples, sem SMTP, tem plano gratuito). Acessível de duas formas — as duas levam ao mesmo
+lugar (mesmos dados, mesmo token):
+- **`https://<seu-worker>/mail`**: página própria, dedicada só a isso.
+- **Aba "Email Marketing"** dentro do `/admin`, a última da barra, depois de Visualizar.
 
 - **Provedor de e-mail**: cole a API key da Resend, o nome e o e-mail do remetente (precisa ser de
   um domínio verificado na Resend — veja o passo a passo abaixo) e, se quiser, um e-mail de resposta.
@@ -138,6 +142,6 @@ Um disparador de e-mail em marketing embutido no mesmo admin, usando a
 **Antes de usar**, crie uma conta gratuita em [resend.com](https://resend.com):
 1. Em **Domains**, adicione o domínio do seu e-mail (ex.: `soluaimoveis.com.br`) e configure os
    registros DNS que a Resend pedir (SPF/DKIM) — sem isso os e-mails caem em spam ou nem saem.
-2. Em **API Keys**, crie uma chave e cole na aba Email Marketing → Provedor de e-mail.
+2. Em **API Keys**, crie uma chave e cole em Provedor de e-mail (em `/mail` ou na aba Email Marketing).
 3. Preencha "E-mail do remetente" com um endereço desse domínio verificado (ex.:
    `contato@soluaimoveis.com.br`).

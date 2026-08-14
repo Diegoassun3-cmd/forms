@@ -1169,6 +1169,12 @@ export default {
         });
       }
 
+      if (url.pathname === "/mail") {
+        return new Response(MAIL_HTML, {
+          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+        });
+      }
+
       return new Response(INDEX_HTML, {
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
       });
