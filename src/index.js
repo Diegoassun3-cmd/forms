@@ -1000,6 +1000,10 @@ export default {
   async fetch(request, env) {
     try {
       const url = new URL(request.url);
+      // tira a barra final (exceto na raiz) pra "/mail/" bater igual a "/mail" nas rotas exatas
+      if (url.pathname.length > 1 && url.pathname.endsWith("/")) {
+        url.pathname = url.pathname.replace(/\/+$/, "");
+      }
 
       if (url.pathname === "/api/submit" && request.method === "POST") {
         return await handleSubmit(request, env);
