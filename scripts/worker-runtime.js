@@ -462,6 +462,554 @@ async function handleSaveConfig(request, env, table) {
   return jsonResponse({ ok: true, config });
 }
 
+// =====================================================================
+// Email marketing (aba própria em Configurações): criativos, listas de
+// contatos e campanhas, enviadas via Resend (https://resend.com).
+// =====================================================================
+
+function escapeHtmlEmail(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function personalize(text, contact) {
+  return String(text || "").replace(/\{\{\s*nome\s*\}\}/gi, contact.nome || "");
+}
+
+/** Uma linha de HTML de e-mail (tabela, pra funcionar em qualquer cliente de e-mail) por bloco. */
+function renderBlockHtml(block, contact) {
+  if (block.type === "heading") {
+    return `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#0b1b2b;">${escapeHtmlEmail(personalize(block.text, contact))}</td></tr>`;
+  }
+  if (block.type === "text") {
+    const html = escapeHtmlEmail(personalize(block.text, contact)).replace(/\n/g, "<br>");
+    return `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#0b1b2b;">${html}</td></tr>`;
+  }
+  if (block.type === "image") {
+    if (!block.src) return "";
+    const img = `<img src="${escapeHtmlEmail(block.src)}" alt="" width="544" style="width:100%;max-width:544px;display:block;border-radius:8px;" />`;
+    const wrapped = block.link ? `<a href="${escapeHtmlEmail(block.link)}" target="_blank" rel="noopener">${img}</a>` : img;
+    return `<tr><td style="padding:0 28px 16px;">${wrapped}</td></tr>`;
+  }
+  if (block.type === "button") {
+    const align = ["left", "center", "right"].includes(block.align) ? block.align : "left";
+    return `<tr><td style="padding:0 28px 24px;" align="${align}">
+      <a href="${escapeHtmlEmail(block.url || "#")}" target="_blank" rel="noopener" style="background:#024ba5;color:#ffffff;text-decoration:none;padding:14px 30px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;display:inline-block;">${escapeHtmlEmail(block.label || "Saiba mais")}</a>
+    </td></tr>`;
+  }
+  if (block.type === "divider") {
+    return `<tr><td style="padding:0 28px 16px;"><hr style="border:none;border-top:1px solid #e2d9c9;margin:0;" /></td></tr>`;
+  }
+  if (block.type === "spacer") {
+    return `<tr><td style="line-height:${Math.max(4, Math.min(120, Number(block.height) || 24))}px;font-size:1px;">&nbsp;</td></tr>`;
+  }
+  return "";
+}
+
+/** Monta o HTML completo do e-mail (blocos do criativo + rodapé com link de descadastro). */
+function renderEmailHtml(blocks, contact, unsubscribeUrl) {
+  const body = (Array.isArray(blocks) ? blocks : []).map((b) => renderBlockHtml(b, contact)).join("");
+  return `<!doctype html>
+<html>
+  <body style="margin:0;padding:0;background:#f2ede6;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2ede6;">
+      <tr>
+        <td align="center" style="padding:32px 16px;">
+          <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;max-width:600px;width:100%;">
+            <tr><td style="line-height:24px;font-size:1px;">&nbsp;</td></tr>
+            ${body}
+            <tr>
+              <td style="padding:24px 28px;border-top:1px solid #e2d9c9;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#5c6773;text-align:center;">
+                Você está recebendo este e-mail porque faz parte da lista de contatos da Solua Imóveis.
+                <br /><a href="${escapeHtmlEmail(unsubscribeUrl)}" style="color:#5c6773;">Cancelar inscrição</a>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+}
+
+async function hmacHex(secret, message) {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(message));
+  return Array.from(new Uint8Array(sig)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+/** Token curto pra link de descadastro — só pra evitar que deem descadastro em outro contato só chutando o ID. */
+async function unsubscribeToken(env, contactId) {
+  const secret = (env.ADMIN_TOKEN || "solua-email-marketing") + "-unsub";
+  const full = await hmacHex(secret, String(contactId));
+  return full.slice(0, 16);
+}
+
+async function handleUnsubscribe(request, env, url) {
+  const c = url.searchParams.get("c");
+  const t = url.searchParams.get("t");
+  const invalidHtml = `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;text-align:center;padding:60px 20px;">
+    <h1 style="color:#c23b2e;">Link inválido</h1><p>Esse link de descadastro não é válido.</p></body></html>`;
+
+  if (!c || !t || !/^\d+$/.test(c)) {
+    return new Response(invalidHtml, { status: 400, headers: { "content-type": "text/html; charset=utf-8" } });
+  }
+  const expected = await unsubscribeToken(env, c);
+  if (expected !== t) {
+    return new Response(invalidHtml, { status: 400, headers: { "content-type": "text/html; charset=utf-8" } });
+  }
+  if (env.DB) {
+    await env.DB.prepare("UPDATE email_contacts SET opt_out = 1 WHERE id = ?").bind(c).run();
+  }
+  return new Response(
+    `<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;text-align:center;padding:60px 20px;">
+      <h1 style="color:#024ba5;">Inscrição cancelada</h1>
+      <p>Você não vai mais receber e-mails da Solua Imóveis. Se mudar de ideia, é só entrar em contato com a gente.</p>
+    </body></html>`,
+    { headers: { "content-type": "text/html; charset=utf-8" } }
+  );
+}
+
+// ---------------------- Configurações do provedor de e-mail ----------------------
+
+function sanitizeEmailSettings(input, existing) {
+  const s = input || {};
+  const apiKey = isNonEmptyString(s.apiKey) ? s.apiKey.trim() : (existing && existing.apiKey) || "";
+  return {
+    provider: "resend",
+    apiKey,
+    fromName: str(s.fromName, 100),
+    fromEmail: str(s.fromEmail, 200),
+    replyTo: str(s.replyTo, 200),
+  };
+}
+
+function publicEmailSettings(settings) {
+  if (!settings) return null;
+  return {
+    provider: settings.provider,
+    fromName: settings.fromName,
+    fromEmail: settings.fromEmail,
+    replyTo: settings.replyTo,
+    apiKeySet: Boolean(settings.apiKey),
+  };
+}
+
+async function handleGetEmailSettings(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: true, settings: null });
+  const row = await env.DB.prepare("SELECT data FROM email_settings WHERE id = 1").first();
+  return jsonResponse({ ok: true, settings: row ? publicEmailSettings(JSON.parse(row.data)) : null });
+}
+
+async function handleSaveEmailSettings(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  const existingRow = await env.DB.prepare("SELECT data FROM email_settings WHERE id = 1").first();
+  const existing = existingRow ? JSON.parse(existingRow.data) : null;
+  const settings = sanitizeEmailSettings(body, existing);
+
+  await env.DB.prepare(
+    "INSERT INTO email_settings (id, data) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data"
+  )
+    .bind(JSON.stringify(settings))
+    .run();
+
+  return jsonResponse({ ok: true, settings: publicEmailSettings(settings) });
+}
+
+// ---------------------- Listas e contatos ----------------------
+
+async function handleListEmailLists(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  const { results } = await env.DB.prepare(
+    `SELECT l.id, l.nome, l.criado_em,
+      (SELECT COUNT(*) FROM email_contacts c WHERE c.list_id = l.id AND c.opt_out = 0) as total_contatos
+     FROM email_lists l ORDER BY l.criado_em DESC`
+  ).all();
+
+  return jsonResponse({ ok: true, lists: results });
+}
+
+async function handleCreateEmailList(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  const nome = str(body.nome, 100);
+  if (!nome) return jsonResponse({ ok: false, error: "Informe um nome pra lista." }, 400);
+
+  const now = new Date().toISOString();
+  const result = await env.DB.prepare("INSERT INTO email_lists (nome, criado_em) VALUES (?, ?)").bind(nome, now).run();
+
+  return jsonResponse({ ok: true, list: { id: result.meta.last_row_id, nome, criado_em: now, total_contatos: 0 } });
+}
+
+async function handleDeleteEmailList(request, env, id) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM email_contacts WHERE list_id = ?").bind(id),
+    env.DB.prepare("DELETE FROM email_lists WHERE id = ?").bind(id),
+  ]);
+
+  return jsonResponse({ ok: true });
+}
+
+async function handleListContacts(request, env, listId) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  const { results } = await env.DB.prepare("SELECT * FROM email_contacts WHERE list_id = ? ORDER BY criado_em DESC")
+    .bind(listId)
+    .all();
+
+  return jsonResponse({ ok: true, contacts: results });
+}
+
+/** Insere/atualiza contatos numa lista, ignorando linhas sem e-mail válido e duplicadas. */
+async function upsertContacts(env, listId, rows) {
+  const now = new Date().toISOString();
+  const seen = new Set();
+  const statements = [];
+  for (const row of rows) {
+    const email = String((row && row.email) || "").trim().toLowerCase();
+    if (!email || !EMAIL_RE.test(email) || seen.has(email)) continue;
+    seen.add(email);
+    const nome = str(row && row.nome, 150);
+    statements.push(
+      env.DB.prepare(
+        "INSERT INTO email_contacts (list_id, nome, email, opt_out, criado_em) VALUES (?, ?, ?, 0, ?) " +
+          "ON CONFLICT(list_id, email) DO UPDATE SET nome = COALESCE(NULLIF(excluded.nome, ''), email_contacts.nome)"
+      ).bind(listId, nome || null, email, now)
+    );
+  }
+  if (statements.length) await env.DB.batch(statements);
+  return { imported: statements.length, skipped: rows.length - statements.length };
+}
+
+async function handleImportContacts(request, env, listId) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  const rows = (Array.isArray(body.contacts) ? body.contacts : []).slice(0, 2000);
+  const { imported, skipped } = await upsertContacts(env, listId, rows);
+
+  return jsonResponse({ ok: true, imported, skipped });
+}
+
+/** De onde dá pra puxar e-mails já cadastrados: os três formulários do site. */
+const IMPORTABLE_FORM_EMAIL_COLUMNS = {
+  vagas: { table: "candidaturas", nameCol: "nome", emailCol: "email" },
+  indicacao: { table: "indicacoes", nameCol: "nome_indicado", emailCol: "email_indicado" },
+  captacao: { table: "captacoes", nameCol: "nome", emailCol: "email" },
+};
+
+async function handleImportFromForm(request, env, listId) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  const src = IMPORTABLE_FORM_EMAIL_COLUMNS[body.form];
+  if (!src) return jsonResponse({ ok: false, error: "Formulário inválido." }, 400);
+
+  const { results } = await env.DB.prepare(
+    `SELECT DISTINCT ${src.nameCol} as nome, ${src.emailCol} as email FROM ${src.table}
+     WHERE ${src.emailCol} IS NOT NULL AND TRIM(${src.emailCol}) != ''`
+  ).all();
+
+  const { imported, skipped } = await upsertContacts(env, listId, results);
+
+  return jsonResponse({ ok: true, imported, skipped });
+}
+
+async function handleDeleteContact(request, env, id) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  await env.DB.prepare("DELETE FROM email_contacts WHERE id = ?").bind(id).run();
+
+  return jsonResponse({ ok: true });
+}
+
+// ---------------------- Criativos (templates) ----------------------
+
+const EMAIL_BLOCK_TYPES = ["heading", "text", "image", "button", "divider", "spacer"];
+
+function sanitizeEmailBlocks(rawBlocks) {
+  return (Array.isArray(rawBlocks) ? rawBlocks : []).slice(0, 60).map((raw) => {
+    const b = raw && typeof raw === "object" ? raw : {};
+    const type = EMAIL_BLOCK_TYPES.includes(b.type) ? b.type : "text";
+    const block = { type };
+    if (type === "heading" || type === "text") block.text = str(b.text, 4000);
+    if (type === "image") {
+      block.src = str(b.src, 2000000); // aceita arquivo enviado (data URI)
+      block.link = str(b.link, 500);
+    }
+    if (type === "button") {
+      block.label = str(b.label, 60);
+      block.url = str(b.url, 500);
+      block.align = ["left", "center", "right"].includes(b.align) ? b.align : "left";
+    }
+    if (type === "spacer") block.height = Math.max(4, Math.min(120, Number(b.height) || 24));
+    return block;
+  });
+}
+
+async function handleListTemplates(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  const { results } = await env.DB.prepare("SELECT * FROM email_templates ORDER BY atualizado_em DESC").all();
+
+  return jsonResponse({ ok: true, templates: results.map((r) => ({ ...r, blocks: JSON.parse(r.blocks) })) });
+}
+
+async function handleSaveTemplate(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  const nome = str(body.nome, 150) || "Criativo sem nome";
+  const blocks = sanitizeEmailBlocks(body.blocks);
+  const now = new Date().toISOString();
+
+  if (body.id && /^\d+$/.test(String(body.id))) {
+    await env.DB.prepare("UPDATE email_templates SET nome = ?, blocks = ?, atualizado_em = ? WHERE id = ?")
+      .bind(nome, JSON.stringify(blocks), now, body.id)
+      .run();
+    return jsonResponse({ ok: true, template: { id: Number(body.id), nome, blocks, atualizado_em: now } });
+  }
+
+  const result = await env.DB.prepare(
+    "INSERT INTO email_templates (nome, blocks, criado_em, atualizado_em) VALUES (?, ?, ?, ?)"
+  )
+    .bind(nome, JSON.stringify(blocks), now, now)
+    .run();
+
+  return jsonResponse({ ok: true, template: { id: result.meta.last_row_id, nome, blocks, criado_em: now, atualizado_em: now } });
+}
+
+async function handleDeleteTemplate(request, env, id) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  await env.DB.prepare("DELETE FROM email_templates WHERE id = ?").bind(id).run();
+
+  return jsonResponse({ ok: true });
+}
+
+// ---------------------- Campanhas (disparos) ----------------------
+
+async function handleListCampaigns(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  const { results } = await env.DB.prepare(
+    `SELECT c.id, c.nome, c.assunto, c.status, c.criado_em, c.template_id, c.list_id,
+      l.nome as lista_nome,
+      (SELECT COUNT(*) FROM email_sends s WHERE s.campaign_id = c.id) as total,
+      (SELECT COUNT(*) FROM email_sends s WHERE s.campaign_id = c.id AND s.status = 'enviado') as enviados,
+      (SELECT COUNT(*) FROM email_sends s WHERE s.campaign_id = c.id AND s.status = 'falhou') as falhas
+     FROM email_campaigns c
+     LEFT JOIN email_lists l ON l.id = c.list_id
+     ORDER BY c.criado_em DESC`
+  ).all();
+
+  return jsonResponse({ ok: true, campaigns: results });
+}
+
+async function handleCreateCampaign(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+
+  const nome = str(body.nome, 150);
+  const assunto = str(body.assunto, 200);
+  const templateId = Number(body.templateId);
+  const listId = Number(body.listId);
+  if (!nome || !assunto || !templateId || !listId) {
+    return jsonResponse({ ok: false, error: "Preencha nome, assunto, criativo e lista." }, 400);
+  }
+
+  const now = new Date().toISOString();
+  const result = await env.DB.prepare(
+    "INSERT INTO email_campaigns (nome, assunto, template_id, list_id, status, criado_em) VALUES (?, ?, ?, ?, 'rascunho', ?)"
+  )
+    .bind(nome, assunto, templateId, listId, now)
+    .run();
+  const campaignId = result.meta.last_row_id;
+
+  // pré-popula email_sends com um "pendente" por contato ativo da lista (não duplica se já existir)
+  await env.DB.prepare(
+    `INSERT OR IGNORE INTO email_sends (campaign_id, contact_id, status)
+     SELECT ?, id, 'pendente' FROM email_contacts WHERE list_id = ? AND opt_out = 0`
+  )
+    .bind(campaignId, listId)
+    .run();
+
+  return jsonResponse({ ok: true, campaignId });
+}
+
+async function handleDeleteCampaign(request, env, id) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  await env.DB.batch([
+    env.DB.prepare("DELETE FROM email_sends WHERE campaign_id = ?").bind(id),
+    env.DB.prepare("DELETE FROM email_campaigns WHERE id = ?").bind(id),
+  ]);
+
+  return jsonResponse({ ok: true });
+}
+
+const EMAIL_SEND_BATCH_SIZE = 20;
+
+/** Envia até EMAIL_SEND_BATCH_SIZE e-mails pendentes da campanha via Resend; chamar de novo até done:true. */
+async function handleSendCampaignBatch(request, env, campaignId, url) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  const campaign = await env.DB.prepare("SELECT * FROM email_campaigns WHERE id = ?").bind(campaignId).first();
+  if (!campaign) return jsonResponse({ ok: false, error: "Campanha não encontrada." }, 404);
+
+  const templateRow = await env.DB.prepare("SELECT * FROM email_templates WHERE id = ?").bind(campaign.template_id).first();
+  if (!templateRow) return jsonResponse({ ok: false, error: "Criativo não encontrado (pode ter sido excluído)." }, 400);
+  const blocks = JSON.parse(templateRow.blocks);
+
+  const settingsRow = await env.DB.prepare("SELECT data FROM email_settings WHERE id = 1").first();
+  const settings = settingsRow ? JSON.parse(settingsRow.data) : null;
+  if (!settings || !settings.apiKey || !settings.fromEmail) {
+    return jsonResponse(
+      { ok: false, error: "Configure o provedor de e-mail (API key e e-mail do remetente) antes de enviar." },
+      400
+    );
+  }
+
+  const { results: pending } = await env.DB.prepare(
+    `SELECT s.id as send_id, c.id as contact_id, c.nome, c.email
+     FROM email_sends s JOIN email_contacts c ON c.id = s.contact_id
+     WHERE s.campaign_id = ? AND s.status = 'pendente' AND c.opt_out = 0 LIMIT ?`
+  )
+    .bind(campaignId, EMAIL_SEND_BATCH_SIZE)
+    .all();
+
+  if (!pending.length) {
+    const { results: countRows } = await env.DB.prepare(
+      "SELECT status, COUNT(*) as n FROM email_sends WHERE campaign_id = ? GROUP BY status"
+    )
+      .bind(campaignId)
+      .all();
+    const enviados = countRows.find((r) => r.status === "enviado")?.n || 0;
+    const falhas = countRows.find((r) => r.status === "falhou")?.n || 0;
+    if (campaign.status !== "concluida") {
+      await env.DB.prepare("UPDATE email_campaigns SET status = 'concluida' WHERE id = ?").bind(campaignId).run();
+    }
+    return jsonResponse({ ok: true, done: true, sent: enviados, failed: falhas });
+  }
+
+  if (campaign.status === "rascunho") {
+    await env.DB.prepare("UPDATE email_campaigns SET status = 'enviando' WHERE id = ?").bind(campaignId).run();
+  }
+
+  const results = await Promise.allSettled(
+    pending.map(async (p) => {
+      const contact = { id: p.contact_id, nome: p.nome, email: p.email };
+      const token = await unsubscribeToken(env, p.contact_id);
+      const unsubscribeUrl = `${url.origin}/unsubscribe?c=${p.contact_id}&t=${token}`;
+      const html = renderEmailHtml(blocks, contact, unsubscribeUrl);
+      const payload = {
+        from: settings.fromName ? `${settings.fromName} <${settings.fromEmail}>` : settings.fromEmail,
+        to: [contact.email],
+        subject: personalize(campaign.assunto, contact),
+        html,
+      };
+      if (settings.replyTo) payload.reply_to = settings.replyTo;
+
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${settings.apiKey}` },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => "");
+        throw new Error(`Resend ${res.status}: ${errBody.slice(0, 200)}`);
+      }
+      return p.send_id;
+    })
+  );
+
+  const statements = results.map((r, i) => {
+    const sendId = pending[i].send_id;
+    if (r.status === "fulfilled") {
+      return env.DB.prepare("UPDATE email_sends SET status = 'enviado', enviado_em = ?, erro = NULL WHERE id = ?").bind(
+        new Date().toISOString(),
+        sendId
+      );
+    }
+    const msg = String((r.reason && r.reason.message) || r.reason || "erro desconhecido").slice(0, 300);
+    return env.DB.prepare("UPDATE email_sends SET status = 'falhou', erro = ? WHERE id = ?").bind(msg, sendId);
+  });
+  await env.DB.batch(statements);
+
+  const sentNow = results.filter((r) => r.status === "fulfilled").length;
+  const failedNow = results.length - sentNow;
+
+  const { results: remainingRows } = await env.DB.prepare(
+    "SELECT COUNT(*) as n FROM email_sends WHERE campaign_id = ? AND status = 'pendente'"
+  )
+    .bind(campaignId)
+    .all();
+  const remaining = remainingRows[0]?.n || 0;
+
+  return jsonResponse({ ok: true, done: false, sentNow, failedNow, remaining });
+}
+
 export default {
   async fetch(request, env) {
     try {
@@ -497,6 +1045,80 @@ export default {
 
       if (url.pathname === "/admin/data") {
         return await handleAdminData(request, env, FORM_TABLES[resolveForm(url)].data);
+      }
+
+      // ---------------------- Email marketing ----------------------
+
+      if (url.pathname === "/unsubscribe") {
+        return await handleUnsubscribe(request, env, url);
+      }
+
+      if (url.pathname === "/admin/email/settings" && request.method === "GET") {
+        return await handleGetEmailSettings(request, env);
+      }
+
+      if (url.pathname === "/admin/email/settings" && request.method === "POST") {
+        return await handleSaveEmailSettings(request, env);
+      }
+
+      if (url.pathname === "/admin/email/lists" && request.method === "GET") {
+        return await handleListEmailLists(request, env);
+      }
+
+      if (url.pathname === "/admin/email/lists" && request.method === "POST") {
+        return await handleCreateEmailList(request, env);
+      }
+
+      {
+        const m = url.pathname.match(/^\/admin\/email\/lists\/(\d+)$/);
+        if (m && request.method === "DELETE") return await handleDeleteEmailList(request, env, m[1]);
+      }
+
+      {
+        const m = url.pathname.match(/^\/admin\/email\/lists\/(\d+)\/contacts$/);
+        if (m && request.method === "GET") return await handleListContacts(request, env, m[1]);
+        if (m && request.method === "POST") return await handleImportContacts(request, env, m[1]);
+      }
+
+      {
+        const m = url.pathname.match(/^\/admin\/email\/lists\/(\d+)\/import$/);
+        if (m && request.method === "POST") return await handleImportFromForm(request, env, m[1]);
+      }
+
+      {
+        const m = url.pathname.match(/^\/admin\/email\/contacts\/(\d+)$/);
+        if (m && request.method === "DELETE") return await handleDeleteContact(request, env, m[1]);
+      }
+
+      if (url.pathname === "/admin/email/templates" && request.method === "GET") {
+        return await handleListTemplates(request, env);
+      }
+
+      if (url.pathname === "/admin/email/templates" && request.method === "POST") {
+        return await handleSaveTemplate(request, env);
+      }
+
+      {
+        const m = url.pathname.match(/^\/admin\/email\/templates\/(\d+)$/);
+        if (m && request.method === "DELETE") return await handleDeleteTemplate(request, env, m[1]);
+      }
+
+      if (url.pathname === "/admin/email/campaigns" && request.method === "GET") {
+        return await handleListCampaigns(request, env);
+      }
+
+      if (url.pathname === "/admin/email/campaigns" && request.method === "POST") {
+        return await handleCreateCampaign(request, env);
+      }
+
+      {
+        const m = url.pathname.match(/^\/admin\/email\/campaigns\/(\d+)$/);
+        if (m && request.method === "DELETE") return await handleDeleteCampaign(request, env, m[1]);
+      }
+
+      {
+        const m = url.pathname.match(/^\/admin\/email\/campaigns\/(\d+)\/send$/);
+        if (m && request.method === "POST") return await handleSendCampaignBatch(request, env, m[1], url);
       }
 
       if (url.pathname === "/admin") {

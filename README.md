@@ -104,7 +104,8 @@ Duas formas de consultar as respostas:
      aparece no formulário de Indicações), e páginas extras — cada uma com suas próprias perguntas
      (texto curto, texto longo, múltipla escolha de uma ou várias opções, ou sim/não), reordenáveis
      com as setas ↑/↓. Escolha no topo qual formulário está editando — cada um guarda sua própria
-     configuração.
+     configuração. Tem duas sub-abas: **Formulários** (o que acabou de ser descrito) e
+     **Email Marketing** (ver seção própria abaixo).
    - **Visualizar**: o formulário selecionado ao vivo dentro do próprio painel, pra conferir o
      resultado sem precisar abrir outra aba. O botão "Pular pro final" pula direto pra tela de
      agradecimento sem precisar preencher nenhuma pergunta.
@@ -114,3 +115,29 @@ Duas formas de consultar as respostas:
    rode `SELECT * FROM candidaturas ORDER BY criado_em DESC;`,
    `SELECT * FROM indicacoes ORDER BY criado_em DESC;` ou
    `SELECT * FROM captacoes ORDER BY criado_em DESC;`.
+
+## Email marketing (Configurações → Email Marketing)
+
+Um disparador de e-mail em marketing embutido no mesmo admin, usando a
+[Resend](https://resend.com) como provedor de envio (API simples, sem SMTP, tem plano gratuito).
+
+- **Provedor de e-mail**: cole a API key da Resend, o nome e o e-mail do remetente (precisa ser de
+  um domínio verificado na Resend — veja o passo a passo abaixo) e, se quiser, um e-mail de resposta.
+- **Listas de contatos**: crie listas e importe contatos colando `nome,email` (um por linha) ou
+  puxando direto das respostas já recebidas nos formulários de Vagas, Indicações ou Captação — sem
+  digitar nada de novo.
+- **Criativos**: monte o e-mail em blocos (título, texto, imagem, botão, divisor, espaço), com
+  pré-visualização ao vivo. Use `{{nome}}` em qualquer texto pra personalizar com o nome do contato.
+- **Campanhas**: escolha um criativo e uma lista, crie a campanha e clique em Enviar — o disparo
+  acontece em lotes (20 e-mails por vez), então dá pra fechar a aba e continuar depois clicando em
+  "Continuar envio"; nada é enviado duas vezes pro mesmo contato.
+- Todo e-mail enviado inclui automaticamente um link de cancelamento de inscrição no rodapé — quem
+  clica é marcado como descadastrado e não recebe mais nada, mesmo que volte a fazer parte de uma
+  lista importada depois.
+
+**Antes de usar**, crie uma conta gratuita em [resend.com](https://resend.com):
+1. Em **Domains**, adicione o domínio do seu e-mail (ex.: `soluaimoveis.com.br`) e configure os
+   registros DNS que a Resend pedir (SPF/DKIM) — sem isso os e-mails caem em spam ou nem saem.
+2. Em **API Keys**, crie uma chave e cole em Configurações → Email Marketing → Provedor de e-mail.
+3. Preencha "E-mail do remetente" com um endereço desse domínio verificado (ex.:
+   `contato@soluaimoveis.com.br`).
