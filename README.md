@@ -87,7 +87,7 @@ indicada.
 Duas formas de consultar as respostas:
 
 1. **Painel `/admin`** (recomendado): abra `https://<seu-worker>/admin`, informe o token de
-   administrador. Seis abas:
+   administrador. Sete abas:
    - **Candidaturas**: respostas do formulário de Vagas — tabela, exportação em CSV e exclusão por linha.
    - **Indicações**: respostas do formulário de Indicações — mesma ideia (tabela, CSV, exclusão),
      incluindo o tipo escolhido (imóvel/seguro/consórcio) e os detalhes específicos de cada um.
@@ -104,11 +104,11 @@ Duas formas de consultar as respostas:
      aparece no formulário de Indicações), e páginas extras — cada uma com suas próprias perguntas
      (texto curto, texto longo, múltipla escolha de uma ou várias opções, ou sim/não), reordenáveis
      com as setas ↑/↓. Escolha no topo qual formulário está editando — cada um guarda sua própria
-     configuração. Tem duas sub-abas: **Formulários** (o que acabou de ser descrito) e
-     **Email Marketing** (ver seção própria abaixo).
+     configuração.
    - **Visualizar**: o formulário selecionado ao vivo dentro do próprio painel, pra conferir o
      resultado sem precisar abrir outra aba. O botão "Pular pro final" pula direto pra tela de
      agradecimento sem precisar preencher nenhuma pergunta.
+   - **Email Marketing**: a última aba, depois de Visualizar — ver seção própria abaixo.
    - Configure o token em **Settings → Variables and Secrets → Add** → tipo *Secret* → variable name
      `ADMIN_TOKEN` → valor: uma senha à sua escolha. Sem isso o `/admin` fica bloqueado (401).
 2. **Direto no D1**: painel Cloudflare → **Workers & Pages → D1 → solua-candidaturas → Console**,
@@ -116,7 +116,7 @@ Duas formas de consultar as respostas:
    `SELECT * FROM indicacoes ORDER BY criado_em DESC;` ou
    `SELECT * FROM captacoes ORDER BY criado_em DESC;`.
 
-## Email marketing (Configurações → Email Marketing)
+## Email marketing (aba própria, depois de Visualizar)
 
 Um disparador de e-mail em marketing embutido no mesmo admin, usando a
 [Resend](https://resend.com) como provedor de envio (API simples, sem SMTP, tem plano gratuito).
@@ -138,6 +138,6 @@ Um disparador de e-mail em marketing embutido no mesmo admin, usando a
 **Antes de usar**, crie uma conta gratuita em [resend.com](https://resend.com):
 1. Em **Domains**, adicione o domínio do seu e-mail (ex.: `soluaimoveis.com.br`) e configure os
    registros DNS que a Resend pedir (SPF/DKIM) — sem isso os e-mails caem em spam ou nem saem.
-2. Em **API Keys**, crie uma chave e cole em Configurações → Email Marketing → Provedor de e-mail.
+2. Em **API Keys**, crie uma chave e cole na aba Email Marketing → Provedor de e-mail.
 3. Preencha "E-mail do remetente" com um endereço desse domínio verificado (ex.:
    `contato@soluaimoveis.com.br`).

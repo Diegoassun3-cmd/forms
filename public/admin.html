@@ -132,17 +132,6 @@
     }
     .form-switch__btn.is-active { background: var(--azul); color: #fff; }
 
-    /* sub-abas dentro de Configurações (Formulários / Email Marketing) — classe própria,
-       sem herdar .tab-btn/.tab-panel, pra não ser pega pelo listener das abas de cima */
-    .subtab-panel { display: none; }
-    .subtab-panel.is-active { display: block; }
-    .subtab-btn {
-      background: none; border: none; padding: 10px 4px; margin: 0 16px -1.5px 0;
-      font-family: inherit; font-weight: 700; font-size: 0.95rem; color: var(--texto-suave);
-      cursor: pointer; border-bottom: 2.5px solid transparent;
-    }
-    .subtab-btn.is-active { color: var(--azul); border-bottom-color: var(--azul); }
-
     /* email marketing: blocos do criativo */
     .email-block {
       border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px; margin-bottom: 10px; background: var(--creme);
@@ -207,6 +196,7 @@
         <button class="tab-btn" type="button" data-tab="paginas">Páginas</button>
         <button class="tab-btn" type="button" data-tab="config">Configurações</button>
         <button class="tab-btn" type="button" data-tab="preview">Visualizar</button>
+        <button class="tab-btn" type="button" data-tab="email">Email Marketing</button>
       </div>
 
       <!-- ===================== ABA: CANDIDATURAS ===================== -->
@@ -341,14 +331,7 @@
 
       <!-- ===================== ABA: CONFIGURAÇÕES ===================== -->
       <div class="tab-panel" id="tab-config">
-        <h1 class="admin__title" style="margin-bottom: 8px;">Configurações</h1>
-
-        <div class="tabs" style="margin-bottom: 20px;">
-          <button class="subtab-btn is-active" type="button" data-subtab="formularios">Formulários</button>
-          <button class="subtab-btn" type="button" data-subtab="email">Email Marketing</button>
-        </div>
-
-        <div class="subtab-panel is-active" id="subtab-formularios">
+        <h1 class="admin__title" style="margin-bottom: 8px;">Configurações do site</h1>
         <div class="form-switch" data-panel="config">
           <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
           <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
@@ -535,11 +518,33 @@
         <button class="btn btn-primary" id="btn-save-config" type="button">Salvar configurações</button>
         <p class="error-msg" id="config-error"></p>
         <p class="success-msg" id="config-success">Salvo!</p>
+      </div>
+
+
+      <!-- ===================== ABA: VISUALIZAR ===================== -->
+      <div class="tab-panel" id="tab-preview">
+        <h1 class="admin__title" style="margin-bottom: 8px;">Visualizar o formulário</h1>
+        <div class="form-switch" data-panel="preview">
+          <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
+          <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+          <button type="button" class="form-switch__btn" data-form="captacao">Captação</button>
         </div>
+        <div class="preview-toolbar">
+          <button class="btn btn-ghost btn-small" id="btn-preview-refresh" type="button">Reiniciar (do começo)</button>
+          <button class="btn btn-ghost btn-small" id="btn-preview-skip" type="button">Pular pro final (sem responder)</button>
+          <a class="btn btn-ghost btn-small" id="btn-preview-newtab" href="/" target="_blank" rel="noopener">Abrir em nova aba</a>
+        </div>
+        <div class="preview-frame-wrap">
+          <iframe id="preview-frame" title="Pré-visualização do formulário"></iframe>
+        </div>
+      </div>
 
-        <!-- ===================== SUBABA: EMAIL MARKETING ===================== -->
-        <div class="subtab-panel" id="subtab-email">
-
+      <!-- ===================== ABA: EMAIL MARKETING ===================== -->
+      <div class="tab-panel" id="tab-email">
+        <h1 class="admin__title" style="margin-bottom: 8px;">Email Marketing</h1>
+        <p class="field__hint" style="margin-bottom: 20px;">
+          Monte criativos, organize listas de contatos e dispare campanhas — tudo aqui, sem precisar de outra ferramenta.
+        </p>
           <div class="settings-section">
             <h2>Provedor de e-mail</h2>
             <p class="field__hint">
@@ -685,26 +690,6 @@
 
             <div id="email-campaigns-list" style="margin-top: 20px;"></div>
           </div>
-
-        </div>
-      </div>
-
-      <!-- ===================== ABA: VISUALIZAR ===================== -->
-      <div class="tab-panel" id="tab-preview">
-        <h1 class="admin__title" style="margin-bottom: 8px;">Visualizar o formulário</h1>
-        <div class="form-switch" data-panel="preview">
-          <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
-          <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
-          <button type="button" class="form-switch__btn" data-form="captacao">Captação</button>
-        </div>
-        <div class="preview-toolbar">
-          <button class="btn btn-ghost btn-small" id="btn-preview-refresh" type="button">Reiniciar (do começo)</button>
-          <button class="btn btn-ghost btn-small" id="btn-preview-skip" type="button">Pular pro final (sem responder)</button>
-          <a class="btn btn-ghost btn-small" id="btn-preview-newtab" href="/" target="_blank" rel="noopener">Abrir em nova aba</a>
-        </div>
-        <div class="preview-frame-wrap">
-          <iframe id="preview-frame" title="Pré-visualização do formulário"></iframe>
-        </div>
       </div>
     </div>
   </div>
@@ -1598,6 +1583,7 @@
           p.classList.toggle("is-active", p.id === "tab-" + btn.dataset.tab);
         });
         if (btn.dataset.tab === "preview") refreshPreview();
+        if (btn.dataset.tab === "email") initEmailMarketing();
       });
     });
 
@@ -2360,16 +2346,6 @@
     }
 
     // ---- eventos ----
-
-    document.querySelectorAll(".subtab-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".subtab-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
-        document.querySelectorAll(".subtab-panel").forEach((p) => {
-          p.classList.toggle("is-active", p.id === "subtab-" + btn.dataset.subtab);
-        });
-        if (btn.dataset.subtab === "email") initEmailMarketing();
-      });
-    });
 
     document.getElementById("btn-save-email-settings").addEventListener("click", saveEmailSettings);
 
