@@ -1,0 +1,1121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Email Marketing — Solua Imóveis</title>
+  <meta name="theme-color" content="#024ba5" />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+
+    body { justify-content: center; align-items: flex-start; padding: 32px 16px; }
+    #admin { width: 100%; max-width: 1200px; background: var(--branco); border-radius: 14px; box-shadow: 0 0 40px rgba(2,75,165,0.08); padding: 28px; }
+    .admin__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .admin__title { font-size: 1.4rem; font-weight: 900; color: var(--texto); margin: 0; }
+    .admin__gate { max-width: 360px; margin: 60px auto; text-align: center; }
+    .admin__gate input { width: 100%; margin-bottom: 12px; }
+    .admin__count { color: var(--texto-suave); font-size: 0.9rem; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1.5px solid var(--creme-escuro); flex-wrap: wrap; }
+    .tab-btn {
+      background: none; border: none; padding: 10px 4px; margin-bottom: -1.5px;
+      font-family: inherit; font-weight: 700; font-size: 0.95rem; color: var(--texto-suave);
+      cursor: pointer; border-bottom: 2.5px solid transparent;
+    }
+    .tab-btn.is-active { color: var(--azul); border-bottom-color: var(--azul); }
+    .tab-panel { display: none; }
+    .tab-panel.is-active { display: block; }
+
+    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    thead th {
+      text-align: left; background: var(--azul-tint); color: var(--azul-escuro);
+      padding: 10px 12px; position: sticky; top: 0; white-space: nowrap; font-weight: 700;
+    }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--creme-escuro); vertical-align: top; }
+    tbody tr:hover { background: var(--creme); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--creme-escuro); border-radius: 10px; }
+    .cell-wrap { max-width: 260px; white-space: pre-wrap; }
+    .error-msg { color: var(--erro); margin-top: 10px; font-size: 0.9rem; display: none; }
+    .error-msg.is-visible { display: block; }
+    .success-msg { color: var(--azul); margin-top: 10px; font-size: 0.9rem; display: none; }
+    .success-msg.is-visible { display: block; }
+    .toolbar { display: flex; gap: 10px; }
+    .btn-small { padding: 10px 18px; font-size: 0.9rem; }
+    .btn-delete {
+      background: none; border: 1.5px solid var(--erro); color: var(--erro);
+      border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+    }
+    .btn-delete:hover { background: rgba(194, 59, 46, 0.08); }
+    .btn-delete:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-icon {
+      background: var(--creme); border: 1.5px solid var(--creme-escuro); color: var(--texto);
+      border-radius: 8px; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; line-height: 1;
+    }
+    .btn-icon:hover { border-color: var(--azul); color: var(--azul); }
+    .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .settings-section { max-width: 640px; margin-bottom: 32px; }
+    .settings-section h2 { font-size: 1.05rem; font-weight: 900; color: var(--texto); margin: 0 0 4px; }
+    .settings-section .field__hint { margin-bottom: 16px; }
+    .settings-row { display: flex; gap: 16px; }
+    .settings-row .field { flex: 1; }
+    .settings-select {
+      width: 100%; border: 1.5px solid var(--creme-escuro); border-radius: 10px;
+      padding: 13px 14px; font-size: 1rem; font-family: inherit; color: var(--texto); background: var(--branco);
+    }
+    .field-checkbox { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+    .field-checkbox input { width: auto; }
+
+    /* upload de imagem */
+    .image-upload { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .image-upload__preview {
+      width: 96px; height: 96px; object-fit: cover; border-radius: 10px; background: var(--creme);
+      border: 1.5px solid var(--creme-escuro);
+    }
+    .image-upload__preview.is-empty { opacity: 0.35; }
+    .image-upload__actions { display: flex; flex-direction: column; gap: 8px; }
+    .image-upload__pick {
+      display: inline-block; cursor: pointer; text-align: center;
+    }
+    .image-upload__status { font-size: 0.8rem; color: var(--texto-suave); }
+    .image-upload__status.is-error { color: var(--erro); }
+
+    /* páginas extras */
+    .extra-page {
+      border: 1.5px solid var(--creme-escuro); border-radius: 12px; padding: 16px; margin-bottom: 16px; background: var(--creme);
+    }
+    .extra-page__header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .extra-page-title { flex: 1; font-weight: 700; background: var(--branco); }
+    .extra-page__move { display: flex; gap: 4px; }
+
+    .extra-q {
+      border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px; margin-bottom: 10px; background: var(--branco);
+    }
+    .extra-q__row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .extra-q__move { display: flex; gap: 4px; }
+    .extra-q-label { flex: 1; min-width: 160px; }
+    .extra-q-type { width: auto; min-width: 150px; }
+    .extra-q__required { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--texto-suave); white-space: nowrap; }
+    .extra-q-options { width: 100%; margin-top: 4px; min-height: 60px; }
+    .btn-add-question, .btn-add-page {
+      background: none; border: 1.5px dashed var(--azul); color: var(--azul);
+      border-radius: 10px; padding: 12px; width: 100%; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-add-question:hover, .btn-add-page:hover { background: var(--azul-tint); }
+
+    /* visão geral de páginas */
+    .pages-overview { list-style: none; margin: 0; padding: 0; max-width: 480px; }
+    .pages-overview li {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px solid var(--creme-escuro);
+      border-radius: 10px; margin-bottom: 8px; background: var(--creme);
+    }
+    .pages-overview .page-badge {
+      flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--azul); color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
+    }
+    .pages-overview .page-name { font-weight: 700; flex: 1; }
+    .pages-overview .page-tag { color: var(--texto-suave); font-size: 0.8rem; }
+    .pages-overview li.is-fixed { opacity: 0.75; }
+    .pages-overview li.is-dragging { border-color: var(--azul); box-shadow: 0 6px 16px rgba(2,75,165,0.18); }
+    .drag-handle {
+      flex: 0 0 auto; cursor: grab; color: var(--texto-suave); font-size: 1.1rem; padding: 4px;
+      touch-action: none; user-select: none;
+    }
+    .drag-handle--disabled { cursor: default; opacity: 0.3; }
+
+    /* alternador de formulário (Vagas / Indicações) usado nas abas Páginas, Configurações e Visualizar */
+    .form-switch { display: inline-flex; gap: 4px; background: var(--creme); padding: 4px; border-radius: 999px; margin-bottom: 20px; }
+    .form-switch__btn {
+      border: none; background: none; padding: 8px 18px; border-radius: 999px;
+      font-family: inherit; font-weight: 700; font-size: 0.85rem; color: var(--texto-suave); cursor: pointer;
+    }
+    .form-switch__btn.is-active { background: var(--azul); color: #fff; }
+
+    /* email marketing: blocos do criativo */
+    .email-block {
+      border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px; margin-bottom: 10px; background: var(--creme);
+    }
+    .email-block__header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .email-block__type { flex: 1; font-weight: 700; font-size: 0.85rem; color: var(--azul); text-transform: uppercase; letter-spacing: 0.04em; }
+    .email-block__move { display: flex; gap: 4px; }
+    .email-block textarea, .email-block input[type="text"], .email-block input[type="number"] {
+      width: 100%; border: 1.5px solid var(--creme-escuro); border-radius: 8px; padding: 10px 12px;
+      font-size: 0.95rem; font-family: inherit; background: var(--branco); margin-bottom: 8px;
+    }
+    .email-block .image-upload__preview { width: 72px; height: 72px; }
+
+    .email-preview-wrap {
+      border: 1.5px solid var(--creme-escuro); border-radius: 12px; overflow: hidden; height: 520px; background: var(--creme);
+    }
+    .email-preview-wrap iframe { width: 100%; height: 100%; border: none; }
+
+    /* listas de templates/campanhas na aba Email Marketing */
+    .email-item-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px solid var(--creme-escuro);
+      border-radius: 10px; margin-bottom: 8px; background: var(--creme); flex-wrap: wrap;
+    }
+    .email-item-row__main { flex: 1; min-width: 180px; }
+    .email-item-row__title { font-weight: 700; }
+    .email-item-row__meta { color: var(--texto-suave); font-size: 0.82rem; margin-top: 2px; }
+    .email-item-row__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .email-progress { background: var(--creme-escuro); border-radius: 999px; height: 8px; overflow: hidden; margin: 10px 0; }
+    .email-progress__bar { height: 100%; background: var(--azul); transition: width 0.2s ease; }
+
+    .status-badge {
+      display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+    }
+    .status-badge.rascunho { background: var(--creme-escuro); color: var(--texto-suave); }
+    .status-badge.enviando { background: #fef3c7; color: #92400e; }
+    .status-badge.concluida { background: var(--azul-tint); color: var(--azul-escuro); }
+
+    /* pré-visualização */
+    .preview-toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
+    .preview-frame-wrap {
+      border: 1.5px solid var(--creme-escuro); border-radius: 12px; overflow: hidden; height: 80vh; max-height: 900px;
+    }
+    .preview-frame-wrap iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+  <div id="admin">
+    <div class="admin__gate" id="gate">
+      <h1 class="admin__title" style="margin-bottom: 8px;">Email Marketing</h1>
+      <p class="field__hint" style="margin-bottom: 16px;">Informe o token de administrador para entrar.</p>
+      <input type="password" id="token-input" placeholder="Token de administrador" autofocus />
+      <button class="btn btn-primary btn-small" id="btn-enter" type="button" style="width:100%;">Entrar</button>
+      <p class="error-msg" id="gate-error">Token inválido.</p>
+    </div>
+
+    <div id="content" class="hidden">
+      <div class="admin__header">
+        <h1 class="admin__title">Email Marketing</h1>
+        <a class="btn btn-ghost btn-small" href="/admin">← Voltar ao painel</a>
+      </div>
+      <p class="field__hint" style="margin-bottom: 20px;">
+        Monte criativos, organize listas de contatos e dispare campanhas — mesmo token do /admin.
+      </p>
+
+          <div class="settings-section">
+            <h2>Provedor de e-mail</h2>
+            <p class="field__hint">
+              Os disparos são feitos pela <a href="https://resend.com" target="_blank" rel="noopener">Resend</a>,
+              um serviço de envio de e-mail (não é sua caixa de e-mail pessoal). Crie uma conta gratuita, verifique
+              seu domínio de envio (ex.: soluaimoveis.com.br) em <em>Domains</em> e gere uma chave em <em>API Keys</em>.
+            </p>
+            <div class="field">
+              <label class="field__label" for="email-cfg-apikey">API key da Resend</label>
+              <span class="field__hint" id="email-cfg-apikey-hint">Deixe em branco pra manter a chave já salva.</span>
+              <input type="password" id="email-cfg-apikey" placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
+            </div>
+            <div class="settings-row">
+              <div class="field">
+                <label class="field__label" for="email-cfg-fromname">Nome do remetente</label>
+                <input type="text" id="email-cfg-fromname" placeholder="Solua Imóveis" />
+              </div>
+              <div class="field">
+                <label class="field__label" for="email-cfg-fromemail">E-mail do remetente</label>
+                <span class="field__hint">Precisa ser de um domínio verificado na Resend.</span>
+                <input type="text" id="email-cfg-fromemail" placeholder="contato@soluaimoveis.com.br" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="field__label" for="email-cfg-replyto">E-mail de resposta (opcional)</label>
+              <input type="text" id="email-cfg-replyto" placeholder="contato@soluaimoveis.com.br" />
+            </div>
+            <button class="btn btn-primary btn-small" id="btn-save-email-settings" type="button">Salvar provedor</button>
+            <p class="error-msg" id="email-settings-error"></p>
+            <p class="success-msg" id="email-settings-success">Salvo!</p>
+          </div>
+
+          <div class="settings-section" style="max-width: 720px;">
+            <h2>Listas de contatos</h2>
+            <p class="field__hint">Crie listas e importe contatos colando e-mails ou puxando de quem já respondeu seus formulários.</p>
+
+            <div class="settings-row" style="align-items: flex-end;">
+              <div class="field" style="flex: 2;">
+                <label class="field__label" for="email-list-select">Lista</label>
+                <select class="settings-select" id="email-list-select"></select>
+              </div>
+              <div class="field" style="flex: 0 0 auto;">
+                <button class="btn btn-ghost btn-small" id="btn-new-email-list" type="button">+ Nova lista</button>
+              </div>
+              <div class="field" style="flex: 0 0 auto;">
+                <button class="btn-delete" id="btn-delete-email-list" type="button">Excluir lista</button>
+              </div>
+            </div>
+
+            <div id="email-list-detail" class="hidden">
+              <p class="field__hint" id="email-list-count"></p>
+
+              <div class="toolbar" style="margin-bottom: 14px; flex-wrap: wrap;">
+                <button class="btn btn-ghost btn-small" type="button" data-import-form="vagas">Importar de Candidaturas</button>
+                <button class="btn btn-ghost btn-small" type="button" data-import-form="indicacao">Importar de Indicações</button>
+                <button class="btn btn-ghost btn-small" type="button" data-import-form="captacao">Importar de Captações</button>
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="email-import-textarea">Importar colando (um contato por linha)</label>
+                <span class="field__hint">Formato: <code>nome,email</code> ou só <code>email</code> por linha.</span>
+                <textarea id="email-import-textarea" rows="4" placeholder="Maria Silva,maria@email.com&#10;joao@email.com"></textarea>
+                <button class="btn btn-ghost btn-small" id="btn-import-paste" type="button" style="margin-top: 8px;">Importar contatos colados</button>
+              </div>
+              <p class="error-msg" id="email-import-error"></p>
+              <p class="success-msg" id="email-import-success"></p>
+
+              <div class="table-wrap" style="margin-top: 16px;">
+                <table>
+                  <thead>
+                    <tr><th>Nome</th><th>E-mail</th><th>Status</th><th>Ações</th></tr>
+                  </thead>
+                  <tbody id="email-contacts-rows"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section" style="max-width: 720px;">
+            <h2>Criativos</h2>
+            <p class="field__hint">Monte o e-mail em blocos. Use <code>{{nome}}</code> em qualquer texto pra personalizar com o nome do contato.</p>
+
+            <div id="email-templates-list"></div>
+            <button class="btn-add-page" type="button" id="btn-new-template">+ Novo criativo</button>
+
+            <div id="email-template-editor" class="hidden" style="margin-top: 20px;">
+              <div class="field">
+                <label class="field__label" for="email-tpl-nome">Nome do criativo</label>
+                <input type="text" id="email-tpl-nome" placeholder="Ex.: Novidades de agosto" />
+              </div>
+
+              <div id="email-blocks-editor"></div>
+              <div class="toolbar" style="flex-wrap: wrap; margin: 10px 0 20px;">
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="heading">+ Título</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="text">+ Texto</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="image">+ Imagem</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="button">+ Botão</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="divider">+ Divisor</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="spacer">+ Espaço</button>
+              </div>
+
+              <div class="toolbar">
+                <button class="btn btn-primary btn-small" id="btn-save-template" type="button">Salvar criativo</button>
+                <button class="btn btn-ghost btn-small" id="btn-cancel-template" type="button">Cancelar</button>
+              </div>
+              <p class="error-msg" id="email-template-error"></p>
+
+              <h2 style="margin-top: 28px;">Pré-visualização</h2>
+              <div class="email-preview-wrap">
+                <iframe id="email-preview-frame" title="Pré-visualização do criativo"></iframe>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section" style="max-width: 780px;">
+            <h2>Campanhas (disparos)</h2>
+            <p class="field__hint">Escolha um criativo e uma lista, e dispare — dá pra fechar a aba e continuar o envio depois.</p>
+
+            <div id="email-campaign-form">
+              <div class="settings-row">
+                <div class="field">
+                  <label class="field__label" for="email-camp-nome">Nome da campanha</label>
+                  <input type="text" id="email-camp-nome" placeholder="Ex.: Newsletter agosto" />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="email-camp-assunto">Assunto do e-mail</label>
+                  <input type="text" id="email-camp-assunto" placeholder="Ex.: Novidades da Solua pra você" />
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="field">
+                  <label class="field__label" for="email-camp-template">Criativo</label>
+                  <select class="settings-select" id="email-camp-template"></select>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="email-camp-list">Lista</label>
+                  <select class="settings-select" id="email-camp-list"></select>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-small" id="btn-create-campaign" type="button">Criar campanha</button>
+              <p class="error-msg" id="email-campaign-error"></p>
+            </div>
+
+            <div id="email-campaigns-list" style="margin-top: 20px;"></div>
+          </div>
+
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "solua_admin_token";
+
+    function esc(value) {
+      const div = document.createElement("div");
+      div.textContent = value == null ? "" : String(value);
+      return div.innerHTML;
+    }
+
+    function swapItems(arr, i, j) {
+      const tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
+    }
+
+    function setImagePreview(imgEl, value) {
+      if (value) {
+        imgEl.src = value;
+        imgEl.classList.remove("is-empty");
+      } else {
+        imgEl.removeAttribute("src");
+        imgEl.classList.add("is-empty");
+      }
+    }
+
+    function resizeImageFile(file, { maxDim, mime, quality }) {
+      return new Promise((resolve, reject) => {
+        if (!file.type || !file.type.startsWith("image/")) {
+          reject(new Error("Escolha um arquivo de imagem."));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error("Arquivo de imagem inválido."));
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width >= height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL(mime, quality));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleImageUpload(file, opts, previewEl, statusEl) {
+      statusEl.textContent = "Processando imagem…";
+      statusEl.classList.remove("is-error");
+      try {
+        const mime = file.type === "image/png" || file.type === "image/webp" ? "image/png" : "image/jpeg";
+        const dataUrl = await resizeImageFile(file, { maxDim: opts.maxDim, mime, quality: opts.quality });
+        if (dataUrl.length > opts.maxChars) {
+          throw new Error(
+            `Imagem ainda ficou grande (${Math.round(dataUrl.length / 1024)} KB) mesmo compactada. ` +
+              "Tente uma imagem mais simples ou já reduzida."
+          );
+        }
+        setImagePreview(previewEl, dataUrl);
+        statusEl.textContent = `Pronto (${Math.round(dataUrl.length / 1024)} KB).`;
+      } catch (err) {
+        statusEl.textContent = err.message || "Erro ao processar a imagem.";
+        statusEl.classList.add("is-error");
+      }
+    }
+
+    // Email marketing
+    // ---------------------------------------------------------------
+
+    let emailSettings = null;
+    let emailLists = [];
+    let currentEmailListId = null;
+    let emailContacts = [];
+    let emailTemplates = [];
+    let emailTemplateDraft = null; // { id: null|number, nome, blocks: [] }
+    let emailCampaigns = [];
+
+    function authHeaders() {
+      return { "x-admin-token": sessionStorage.getItem(STORAGE_KEY) };
+    }
+
+    async function apiGet(path) {
+      const res = await fetch(path, { headers: authHeaders(), cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Erro ao carregar.");
+      return data;
+    }
+
+    async function apiPost(path, body) {
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...authHeaders() },
+        body: JSON.stringify(body || {}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Erro ao salvar.");
+      return data;
+    }
+
+    async function apiDelete(path) {
+      const res = await fetch(path, { method: "DELETE", headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Erro ao excluir.");
+      return data;
+    }
+
+    async function initEmailMarketing() {
+      try {
+        await Promise.all([loadEmailSettingsIntoForm(), loadEmailLists(), loadEmailTemplates(), loadEmailCampaigns()]);
+      } catch (err) {
+        alert(err.message || "Erro ao carregar Email Marketing.");
+      }
+    }
+
+    // ---- Provedor de e-mail ----
+
+    async function loadEmailSettingsIntoForm() {
+      const data = await apiGet("/admin/email/settings");
+      emailSettings = data.settings;
+      document.getElementById("email-cfg-fromname").value = (emailSettings && emailSettings.fromName) || "";
+      document.getElementById("email-cfg-fromemail").value = (emailSettings && emailSettings.fromEmail) || "";
+      document.getElementById("email-cfg-replyto").value = (emailSettings && emailSettings.replyTo) || "";
+      document.getElementById("email-cfg-apikey").value = "";
+      document.getElementById("email-cfg-apikey").placeholder =
+        emailSettings && emailSettings.apiKeySet ? "•••••••••••••••••••• (já configurada)" : "re_xxxxxxxxxxxxxxxxxxxxxxxx";
+    }
+
+    async function saveEmailSettings() {
+      const btn = document.getElementById("btn-save-email-settings");
+      const errorEl = document.getElementById("email-settings-error");
+      const successEl = document.getElementById("email-settings-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Salvando…";
+      try {
+        const data = await apiPost("/admin/email/settings", {
+          apiKey: document.getElementById("email-cfg-apikey").value,
+          fromName: document.getElementById("email-cfg-fromname").value,
+          fromEmail: document.getElementById("email-cfg-fromemail").value,
+          replyTo: document.getElementById("email-cfg-replyto").value,
+        });
+        emailSettings = data.settings;
+        document.getElementById("email-cfg-apikey").value = "";
+        document.getElementById("email-cfg-apikey").placeholder = emailSettings.apiKeySet
+          ? "•••••••••••••••••••• (já configurada)"
+          : "re_xxxxxxxxxxxxxxxxxxxxxxxx";
+        successEl.classList.add("is-visible");
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    // ---- Listas e contatos ----
+
+    function renderEmailListSelect() {
+      const sel = document.getElementById("email-list-select");
+      sel.innerHTML = emailLists.length
+        ? emailLists.map((l) => `<option value="${l.id}">${esc(l.nome)} (${l.total_contatos})</option>`).join("")
+        : '<option value="">Nenhuma lista ainda</option>';
+      if (emailLists.length) {
+        if (!currentEmailListId || !emailLists.find((l) => l.id === currentEmailListId)) {
+          currentEmailListId = emailLists[0].id;
+        }
+        sel.value = currentEmailListId;
+      } else {
+        currentEmailListId = null;
+      }
+      document.getElementById("email-list-detail").classList.toggle("hidden", !currentEmailListId);
+    }
+
+    async function loadEmailLists() {
+      const data = await apiGet("/admin/email/lists");
+      emailLists = data.lists;
+      renderEmailListSelect();
+      renderEmailCampaignListSelect();
+      if (currentEmailListId) await loadContactsForCurrentList();
+    }
+
+    async function loadContactsForCurrentList() {
+      if (!currentEmailListId) {
+        emailContacts = [];
+        renderContactsTable();
+        return;
+      }
+      const data = await apiGet(`/admin/email/lists/${currentEmailListId}/contacts`);
+      emailContacts = data.contacts;
+      renderContactsTable();
+    }
+
+    function renderContactsTable() {
+      document.getElementById("email-list-count").textContent =
+        emailContacts.length + " contato(s) — " + emailContacts.filter((c) => !c.opt_out).length + " ativo(s)";
+      document.getElementById("email-contacts-rows").innerHTML = emailContacts
+        .map(
+          (c) => `<tr>
+            <td>${esc(c.nome || "")}</td>
+            <td>${esc(c.email)}</td>
+            <td>${c.opt_out ? '<span class="status-badge rascunho">Descadastrado</span>' : '<span class="status-badge concluida">Ativo</span>'}</td>
+            <td><button class="btn-delete" type="button" data-remove-contact="${c.id}">Remover</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function createEmailList() {
+      const nome = prompt("Nome da nova lista:");
+      if (!nome || !nome.trim()) return;
+      try {
+        const data = await apiPost("/admin/email/lists", { nome: nome.trim() });
+        currentEmailListId = data.list.id;
+        await loadEmailLists();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteCurrentEmailList() {
+      if (!currentEmailListId) return;
+      const list = emailLists.find((l) => l.id === currentEmailListId);
+      if (!confirm(`Excluir a lista "${list ? list.nome : ""}" e todos os contatos dela? Essa ação não pode ser desfeita.`)) return;
+      try {
+        await apiDelete(`/admin/email/lists/${currentEmailListId}`);
+        currentEmailListId = null;
+        await loadEmailLists();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function parsePastedContacts(text) {
+      return text
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split(",");
+          if (parts.length >= 2) return { nome: parts[0].trim(), email: parts.slice(1).join(",").trim() };
+          return { nome: "", email: parts[0].trim() };
+        });
+    }
+
+    async function importPastedContacts() {
+      const errorEl = document.getElementById("email-import-error");
+      const successEl = document.getElementById("email-import-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+      if (!currentEmailListId) return;
+      const contacts = parsePastedContacts(document.getElementById("email-import-textarea").value);
+      if (!contacts.length) return;
+      try {
+        const data = await apiPost(`/admin/email/lists/${currentEmailListId}/contacts`, { contacts });
+        successEl.textContent = `${data.imported} contato(s) importado(s)${data.skipped ? `, ${data.skipped} ignorado(s)` : ""}.`;
+        successEl.classList.add("is-visible");
+        document.getElementById("email-import-textarea").value = "";
+        await loadEmailLists();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function importFromForm(formKey) {
+      if (!currentEmailListId) return;
+      const errorEl = document.getElementById("email-import-error");
+      const successEl = document.getElementById("email-import-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+      try {
+        const data = await apiPost(`/admin/email/lists/${currentEmailListId}/import`, { form: formKey });
+        successEl.textContent = `${data.imported} contato(s) importado(s)${data.skipped ? `, ${data.skipped} ignorado(s)` : ""}.`;
+        successEl.classList.add("is-visible");
+        await loadEmailLists();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function removeContact(id) {
+      try {
+        await apiDelete(`/admin/email/contacts/${id}`);
+        await loadEmailLists();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ---- Criativos ----
+
+    function emptyBlockFor(type) {
+      if (type === "heading") return { type, text: "" };
+      if (type === "text") return { type, text: "" };
+      if (type === "image") return { type, src: "", link: "" };
+      if (type === "button") return { type, label: "Saiba mais", url: "", align: "left" };
+      if (type === "spacer") return { type, height: 24 };
+      return { type: "divider" };
+    }
+
+    async function loadEmailTemplates() {
+      const data = await apiGet("/admin/email/templates");
+      emailTemplates = data.templates;
+      renderTemplatesList();
+      renderEmailCampaignTemplateSelect();
+    }
+
+    function renderTemplatesList() {
+      const el = document.getElementById("email-templates-list");
+      el.innerHTML = emailTemplates.length
+        ? emailTemplates
+            .map(
+              (t) => `<div class="email-item-row">
+                <div class="email-item-row__main">
+                  <div class="email-item-row__title">${esc(t.nome)}</div>
+                  <div class="email-item-row__meta">${t.blocks.length} bloco(s)</div>
+                </div>
+                <div class="email-item-row__actions">
+                  <button class="btn btn-ghost btn-small" type="button" data-edit-template="${t.id}">Editar</button>
+                  <button class="btn-delete" type="button" data-delete-template="${t.id}">Excluir</button>
+                </div>
+              </div>`
+            )
+            .join("")
+        : '<p class="field__hint">Nenhum criativo ainda.</p>';
+    }
+
+    function openTemplateEditor(template) {
+      emailTemplateDraft = template
+        ? { id: template.id, nome: template.nome, blocks: template.blocks.map((b) => ({ ...b })) }
+        : { id: null, nome: "", blocks: [] };
+      document.getElementById("email-tpl-nome").value = emailTemplateDraft.nome;
+      document.getElementById("email-template-editor").classList.remove("hidden");
+      document.getElementById("email-template-error").classList.remove("is-visible");
+      renderBlocksEditor();
+      updateEmailPreview();
+    }
+
+    function closeTemplateEditor() {
+      emailTemplateDraft = null;
+      document.getElementById("email-template-editor").classList.add("hidden");
+    }
+
+    function blockEditorFieldsHtml(block) {
+      if (block.type === "heading" || block.type === "text") {
+        return `<textarea class="eb-text" rows="${block.type === "heading" ? 2 : 4}" placeholder="Texto (use {{nome}} pra personalizar)">${esc(block.text)}</textarea>`;
+      }
+      if (block.type === "image") {
+        return `
+          <div class="image-upload">
+            <img class="image-upload__preview ${block.src ? "" : "is-empty"}" src="${block.src ? esc(block.src) : ""}" alt="" />
+            <div class="image-upload__actions">
+              <label class="btn btn-ghost btn-small image-upload__pick">Escolher imagem
+                <input type="file" accept="image/*" class="hidden eb-image-file" />
+              </label>
+            </div>
+            <span class="image-upload__status"></span>
+          </div>
+          <input type="text" class="eb-link" placeholder="Link ao clicar na imagem (opcional)" value="${esc(block.link || "")}" style="margin-top:8px;" />`;
+      }
+      if (block.type === "button") {
+        return `
+          <input type="text" class="eb-label" placeholder="Texto do botão" value="${esc(block.label || "")}" />
+          <input type="text" class="eb-url" placeholder="Link (https://...)" value="${esc(block.url || "")}" />
+          <select class="settings-select eb-align">
+            <option value="left" ${block.align === "left" ? "selected" : ""}>Esquerda</option>
+            <option value="center" ${block.align === "center" ? "selected" : ""}>Centro</option>
+            <option value="right" ${block.align === "right" ? "selected" : ""}>Direita</option>
+          </select>`;
+      }
+      if (block.type === "spacer") {
+        return `<input type="number" class="eb-height" min="4" max="120" value="${block.height || 24}" placeholder="Altura em pixels" />`;
+      }
+      return '<p class="field__hint" style="margin:0;">Uma linha divisória.</p>';
+    }
+
+    const EMAIL_BLOCK_LABELS = { heading: "Título", text: "Texto", image: "Imagem", button: "Botão", divider: "Divisor", spacer: "Espaço" };
+
+    function renderBlocksEditor() {
+      const el = document.getElementById("email-blocks-editor");
+      if (!emailTemplateDraft.blocks.length) {
+        el.innerHTML = '<p class="field__hint">Nenhum bloco ainda — adicione um abaixo.</p>';
+        return;
+      }
+      el.innerHTML = emailTemplateDraft.blocks
+        .map(
+          (b, i) => `<div class="email-block" data-block-index="${i}">
+            <div class="email-block__header">
+              <span class="email-block__type">${EMAIL_BLOCK_LABELS[b.type] || b.type}</span>
+              <div class="email-block__move">
+                <button type="button" class="btn-icon eb-move-up" ${i === 0 ? "disabled" : ""} title="Mover pra cima">↑</button>
+                <button type="button" class="btn-icon eb-move-down" ${i === emailTemplateDraft.blocks.length - 1 ? "disabled" : ""} title="Mover pra baixo">↓</button>
+              </div>
+              <button type="button" class="btn-delete eb-remove">Remover</button>
+            </div>
+            ${blockEditorFieldsHtml(b)}
+          </div>`
+        )
+        .join("");
+    }
+
+    function syncBlocksFromDom() {
+      document.querySelectorAll("#email-blocks-editor .email-block").forEach((el) => {
+        const i = Number(el.dataset.blockIndex);
+        const block = emailTemplateDraft.blocks[i];
+        if (!block) return;
+        if (block.type === "heading" || block.type === "text") block.text = el.querySelector(".eb-text").value;
+        if (block.type === "image") {
+          const img = el.querySelector(".image-upload__preview");
+          block.src = img && img.getAttribute("src") ? img.getAttribute("src") : "";
+          block.link = el.querySelector(".eb-link").value;
+        }
+        if (block.type === "button") {
+          block.label = el.querySelector(".eb-label").value;
+          block.url = el.querySelector(".eb-url").value;
+          block.align = el.querySelector(".eb-align").value;
+        }
+        if (block.type === "spacer") block.height = Number(el.querySelector(".eb-height").value) || 24;
+      });
+    }
+
+    /** Igual ao renderEmailHtml do worker — usado só pra pré-visualizar sem precisar salvar antes. */
+    function clientRenderBlockHtml(block) {
+      const t = (block.text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+      if (block.type === "heading")
+        return `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#0b1b2b;">${t}</td></tr>`;
+      if (block.type === "text")
+        return `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#0b1b2b;">${t}</td></tr>`;
+      if (block.type === "image" && block.src)
+        return `<tr><td style="padding:0 28px 16px;"><img src="${block.src}" style="width:100%;max-width:544px;display:block;border-radius:8px;" /></td></tr>`;
+      if (block.type === "button")
+        return `<tr><td style="padding:0 28px 24px;" align="${block.align || "left"}"><a href="${block.url || "#"}" style="background:#024ba5;color:#fff;text-decoration:none;padding:14px 30px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;display:inline-block;">${(block.label || "Saiba mais").replace(/</g, "&lt;")}</a></td></tr>`;
+      if (block.type === "divider")
+        return `<tr><td style="padding:0 28px 16px;"><hr style="border:none;border-top:1px solid #e2d9c9;" /></td></tr>`;
+      if (block.type === "spacer") return `<tr><td style="line-height:${block.height || 24}px;font-size:1px;">&nbsp;</td></tr>`;
+      return "";
+    }
+
+    function updateEmailPreview() {
+      const body = emailTemplateDraft.blocks.map(clientRenderBlockHtml).join("");
+      const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f2ede6;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2ede6;">
+          <tr><td align="center" style="padding:32px 16px;">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;max-width:600px;width:100%;">
+              <tr><td style="line-height:24px;font-size:1px;">&nbsp;</td></tr>
+              ${body}
+              <tr><td style="padding:24px 28px;border-top:1px solid #e2d9c9;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#5c6773;text-align:center;">
+                Você está recebendo este e-mail porque faz parte da lista de contatos da Solua Imóveis.
+                <br /><a href="#" style="color:#5c6773;">Cancelar inscrição</a>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body></html>`;
+      document.getElementById("email-preview-frame").srcdoc = html;
+    }
+
+    async function saveTemplate() {
+      syncBlocksFromDom();
+      emailTemplateDraft.nome = document.getElementById("email-tpl-nome").value.trim();
+      const errorEl = document.getElementById("email-template-error");
+      errorEl.classList.remove("is-visible");
+      if (!emailTemplateDraft.nome) {
+        errorEl.textContent = "Dê um nome pro criativo.";
+        errorEl.classList.add("is-visible");
+        return;
+      }
+      try {
+        await apiPost("/admin/email/templates", emailTemplateDraft);
+        closeTemplateEditor();
+        await loadEmailTemplates();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function deleteTemplate(id) {
+      if (!confirm("Excluir esse criativo? Campanhas que já usam ele continuam com o histórico, mas você não vai poder criar novas com ele.")) return;
+      try {
+        await apiDelete(`/admin/email/templates/${id}`);
+        await loadEmailTemplates();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ---- Campanhas ----
+
+    function renderEmailCampaignTemplateSelect() {
+      const sel = document.getElementById("email-camp-template");
+      sel.innerHTML = emailTemplates.length
+        ? emailTemplates.map((t) => `<option value="${t.id}">${esc(t.nome)}</option>`).join("")
+        : '<option value="">Crie um criativo primeiro</option>';
+    }
+
+    function renderEmailCampaignListSelect() {
+      const sel = document.getElementById("email-camp-list");
+      sel.innerHTML = emailLists.length
+        ? emailLists.map((l) => `<option value="${l.id}">${esc(l.nome)} (${l.total_contatos})</option>`).join("")
+        : '<option value="">Crie uma lista primeiro</option>';
+    }
+
+    async function loadEmailCampaigns() {
+      const data = await apiGet("/admin/email/campaigns");
+      emailCampaigns = data.campaigns;
+      renderCampaignsList();
+    }
+
+    const CAMPAIGN_STATUS_LABELS = { rascunho: "Rascunho", enviando: "Enviando", concluida: "Concluída" };
+
+    function renderCampaignsList() {
+      const el = document.getElementById("email-campaigns-list");
+      el.innerHTML = emailCampaigns.length
+        ? emailCampaigns
+            .map((c) => {
+              const total = c.total || 0;
+              const done = (c.enviados || 0) + (c.falhas || 0);
+              const pct = total ? Math.round((done / total) * 100) : 0;
+              return `<div class="email-item-row" style="flex-direction: column; align-items: stretch;">
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap: wrap;">
+                  <div class="email-item-row__main">
+                    <div class="email-item-row__title">${esc(c.nome)} <span class="status-badge ${c.status}">${CAMPAIGN_STATUS_LABELS[c.status] || c.status}</span></div>
+                    <div class="email-item-row__meta">Assunto: ${esc(c.assunto)} · Lista: ${esc(c.lista_nome || "—")} · ${c.enviados || 0} enviado(s)${c.falhas ? `, ${c.falhas} falha(s)` : ""} de ${total}</div>
+                  </div>
+                  <div class="email-item-row__actions">
+                    ${
+                      c.status !== "concluida"
+                        ? `<button class="btn btn-primary btn-small" type="button" data-send-campaign="${c.id}">${c.status === "enviando" ? "Continuar envio" : "Enviar"}</button>`
+                        : ""
+                    }
+                    <button class="btn-delete" type="button" data-delete-campaign="${c.id}">Excluir</button>
+                  </div>
+                </div>
+                <div class="email-progress"><div class="email-progress__bar" style="width:${pct}%"></div></div>
+                <p class="field__hint" style="margin:0;" data-campaign-status="${c.id}"></p>
+              </div>`;
+            })
+            .join("")
+        : '<p class="field__hint">Nenhuma campanha ainda.</p>';
+    }
+
+    async function createCampaign() {
+      const errorEl = document.getElementById("email-campaign-error");
+      errorEl.classList.remove("is-visible");
+      const nome = document.getElementById("email-camp-nome").value.trim();
+      const assunto = document.getElementById("email-camp-assunto").value.trim();
+      const templateId = document.getElementById("email-camp-template").value;
+      const listId = document.getElementById("email-camp-list").value;
+      if (!nome || !assunto || !templateId || !listId) {
+        errorEl.textContent = "Preencha nome, assunto, criativo e lista.";
+        errorEl.classList.add("is-visible");
+        return;
+      }
+      try {
+        await apiPost("/admin/email/campaigns", { nome, assunto, templateId, listId });
+        document.getElementById("email-camp-nome").value = "";
+        document.getElementById("email-camp-assunto").value = "";
+        await loadEmailCampaigns();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function deleteCampaign(id) {
+      if (!confirm("Excluir essa campanha? O histórico de envio se perde.")) return;
+      try {
+        await apiDelete(`/admin/email/campaigns/${id}`);
+        await loadEmailCampaigns();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function sendCampaign(id, btn) {
+      btn.disabled = true;
+      let errorMsg = null;
+
+      try {
+        let done = false;
+        let totalSent = 0;
+        while (!done) {
+          const data = await apiPost(`/admin/email/campaigns/${id}/send`);
+          if (data.done) {
+            done = true;
+          } else {
+            totalSent += data.sentNow;
+            const statusEl = document.querySelector(`[data-campaign-status="${id}"]`);
+            if (statusEl) statusEl.textContent = `Enviando… ${totalSent} enviado(s), ${data.remaining} restante(s).`;
+          }
+        }
+        // ao terminar, o recarregamento abaixo já atualiza o selo e a contagem — não precisa de
+        // mensagem extra aqui (e ela seria apagada pelo re-render de qualquer forma)
+      } catch (err) {
+        errorMsg = err.message;
+      } finally {
+        btn.disabled = false;
+        await loadEmailCampaigns();
+        if (errorMsg) {
+          const statusEl = document.querySelector(`[data-campaign-status="${id}"]`);
+          if (statusEl) statusEl.textContent = "Erro: " + errorMsg;
+        }
+      }
+    }
+
+    // ---- eventos ----
+
+    document.getElementById("btn-save-email-settings").addEventListener("click", saveEmailSettings);
+
+    document.getElementById("email-list-select").addEventListener("change", async (e) => {
+      currentEmailListId = Number(e.target.value) || null;
+      document.getElementById("email-list-detail").classList.toggle("hidden", !currentEmailListId);
+      await loadContactsForCurrentList();
+    });
+
+    document.getElementById("btn-new-email-list").addEventListener("click", createEmailList);
+    document.getElementById("btn-delete-email-list").addEventListener("click", deleteCurrentEmailList);
+    document.getElementById("btn-import-paste").addEventListener("click", importPastedContacts);
+
+    document.querySelectorAll("[data-import-form]").forEach((btn) => {
+      btn.addEventListener("click", () => importFromForm(btn.dataset.importForm));
+    });
+
+    document.getElementById("email-contacts-rows").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-remove-contact]");
+      if (btn && confirm("Remover esse contato da lista?")) removeContact(btn.dataset.removeContact);
+    });
+
+    document.getElementById("btn-new-template").addEventListener("click", () => openTemplateEditor(null));
+    document.getElementById("btn-cancel-template").addEventListener("click", closeTemplateEditor);
+    document.getElementById("btn-save-template").addEventListener("click", saveTemplate);
+
+    document.getElementById("email-templates-list").addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-edit-template]");
+      if (editBtn) {
+        const t = emailTemplates.find((x) => String(x.id) === editBtn.dataset.editTemplate);
+        if (t) openTemplateEditor(t);
+        return;
+      }
+      const delBtn = e.target.closest("[data-delete-template]");
+      if (delBtn) deleteTemplate(delBtn.dataset.deleteTemplate);
+    });
+
+    document.querySelectorAll("[data-add-block]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        syncBlocksFromDom();
+        emailTemplateDraft.blocks.push(emptyBlockFor(btn.dataset.addBlock));
+        renderBlocksEditor();
+        updateEmailPreview();
+      });
+    });
+
+    document.getElementById("email-blocks-editor").addEventListener("click", (e) => {
+      const blockEl = e.target.closest(".email-block");
+      if (!blockEl) return;
+      const i = Number(blockEl.dataset.blockIndex);
+
+      if (e.target.closest(".eb-remove")) {
+        syncBlocksFromDom();
+        emailTemplateDraft.blocks.splice(i, 1);
+        renderBlocksEditor();
+        updateEmailPreview();
+        return;
+      }
+      if (e.target.closest(".eb-move-up")) {
+        syncBlocksFromDom();
+        if (i > 0) swapItems(emailTemplateDraft.blocks, i, i - 1);
+        renderBlocksEditor();
+        updateEmailPreview();
+        return;
+      }
+      if (e.target.closest(".eb-move-down")) {
+        syncBlocksFromDom();
+        if (i < emailTemplateDraft.blocks.length - 1) swapItems(emailTemplateDraft.blocks, i, i + 1);
+        renderBlocksEditor();
+        updateEmailPreview();
+      }
+    });
+
+    document.getElementById("email-blocks-editor").addEventListener("input", (e) => {
+      if (e.target.closest(".email-block")) {
+        syncBlocksFromDom();
+        updateEmailPreview();
+      }
+    });
+
+    document.getElementById("email-blocks-editor").addEventListener("change", (e) => {
+      const fileInput = e.target.closest(".eb-image-file");
+      if (fileInput && fileInput.files[0]) {
+        const blockEl = fileInput.closest(".email-block");
+        const previewEl = blockEl.querySelector(".image-upload__preview");
+        const statusEl = blockEl.querySelector(".image-upload__status");
+        handleImageUpload(fileInput.files[0], { maxDim: 1200, maxChars: 900000, quality: 0.8 }, previewEl, statusEl).then(() => {
+          syncBlocksFromDom();
+          updateEmailPreview();
+        });
+        fileInput.value = "";
+        return;
+      }
+      if (e.target.closest(".email-block")) {
+        syncBlocksFromDom();
+        updateEmailPreview();
+      }
+    });
+
+    document.getElementById("btn-create-campaign").addEventListener("click", createCampaign);
+
+    document.getElementById("email-campaigns-list").addEventListener("click", (e) => {
+      const sendBtn = e.target.closest("[data-send-campaign]");
+      if (sendBtn) {
+        sendCampaign(sendBtn.dataset.sendCampaign, sendBtn);
+        return;
+      }
+      const delBtn = e.target.closest("[data-delete-campaign]");
+      if (delBtn) deleteCampaign(delBtn.dataset.deleteCampaign);
+    });
+
+
+
+    // ---------------------------------------------------------------
+    // Login
+    // ---------------------------------------------------------------
+
+    async function tryEnter(token) {
+      const errorEl = document.getElementById("gate-error");
+      errorEl.classList.remove("is-visible");
+      sessionStorage.setItem(STORAGE_KEY, token); // temporário, pra validar contra a API
+      try {
+        await apiGet("/admin/email/settings"); // qualquer chamada autenticada valida o token
+        document.getElementById("gate").classList.add("hidden");
+        document.getElementById("content").classList.remove("hidden");
+        await initEmailMarketing();
+      } catch (err) {
+        sessionStorage.removeItem(STORAGE_KEY);
+        errorEl.textContent = err.message || "Token inválido.";
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    document.getElementById("btn-enter").addEventListener("click", () => {
+      const token = document.getElementById("token-input").value.trim();
+      if (token) tryEnter(token);
+    });
+
+    document.getElementById("token-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("btn-enter").click();
+    });
+
+    // reentra sozinho se já tiver token salvo (compartilhado com o /admin, mesma origem)
+    const savedToken = sessionStorage.getItem(STORAGE_KEY);
+    if (savedToken) tryEnter(savedToken);
+  </script>
+</body>
+</html>

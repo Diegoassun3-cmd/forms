@@ -1,0 +1,642 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap');
+
+:root {
+  --azul: #024ba5;
+  --azul-escuro: #012e66;
+  --azul-tint: #e5edf9;
+  --creme: #f2ede6;
+  --creme-escuro: #e2d9c9;
+  --branco: #ffffff;
+  --texto: #0b1b2b;
+  --texto-suave: #5c6773;
+  --erro: #c23b2e;
+  --radius: 14px;
+  font-size: 16px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--creme);
+  color: var(--texto);
+  display: flex;
+  justify-content: center;
+}
+
+#app {
+  width: 100%;
+  max-width: 640px;
+  min-height: 100vh;
+  background: var(--branco);
+  box-shadow: 0 0 40px rgba(2, 75, 165, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- Tela de abertura ---------- */
+
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  background: var(--azul-escuro);
+}
+
+.hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.hero__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(1,46,102,0.45) 0%, rgba(1,46,102,0.82) 65%, rgba(1,20,46,0.96) 100%);
+}
+
+.hero__overlay.is-hidden { display: none; }
+
+/* ---------- Logo (opcional, sobreposto na foto) ---------- */
+
+.brand-logo {
+  position: absolute;
+  z-index: 3;
+  max-width: 140px;
+  max-height: 56px;
+  object-fit: contain;
+}
+
+.brand-logo.hidden { display: none; }
+
+.brand-logo--top-left { top: 20px; left: 20px; }
+.brand-logo--top-center { top: 20px; left: 50%; transform: translateX(-50%); }
+.brand-logo--top-right { top: 20px; right: 20px; }
+.brand-logo--center { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.brand-logo--bottom-left { bottom: 20px; left: 20px; }
+.brand-logo--bottom-right { bottom: 20px; right: 20px; }
+
+/* tamanho da logo (a posição "centro" usa transform pra centralizar, então o
+   tamanho não pode mexer no transform — só no max-width/max-height mesmo) */
+.brand-logo--size-pequeno { max-width: 90px; max-height: 36px; }
+.brand-logo--size-medio { max-width: 140px; max-height: 56px; }
+.brand-logo--size-grande { max-width: 220px; max-height: 88px; }
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  padding: 40px 28px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* posição vertical do bloco de texto sobre a foto (só no celular — no
+   computador o texto já fica sempre centralizado no painel ao lado) */
+.hero__content.text-pos-top { margin-top: 0; margin-bottom: auto; }
+.hero__content.text-pos-center { margin-top: auto; margin-bottom: auto; }
+.hero__content.text-pos-bottom { margin-top: auto; margin-bottom: 0; }
+
+/* alinhamento horizontal do texto (e dos elementos do bloco) */
+.text-align-left { text-align: left; align-items: flex-start; }
+.text-align-center { text-align: center; align-items: center; }
+.text-align-right { text-align: right; align-items: flex-end; }
+
+.hero__title {
+  font-size: 2.1rem;
+  line-height: 1.15;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.hero__title.title-size-small { font-size: 1.6rem; }
+.hero__title.title-size-large { font-size: 2.6rem; }
+
+.hero__subtitle {
+  margin: 0;
+  color: #dfe7f2;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* microcopy opcional de rodapé (tela inicial e de agradecimento) */
+.footer-note {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.4;
+}
+
+/* ---------- Botões ---------- */
+
+.btn {
+  appearance: none;
+  border: none;
+  border-radius: 999px;
+  padding: 16px 28px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  font-family: inherit;
+}
+
+.btn:active { transform: scale(0.98); }
+
+.btn-primary {
+  background: var(--azul);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(2, 75, 165, 0.35);
+}
+
+.btn-primary:hover { box-shadow: 0 10px 24px rgba(2, 75, 165, 0.45); }
+
+.btn-primary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--texto-suave);
+  padding: 16px 18px;
+}
+
+.hero .btn-primary {
+  width: 100%;
+  background: var(--creme);
+  color: var(--azul-escuro);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.hero .btn-primary:hover { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3); }
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: -12px;
+  padding: 0 24px 40px;
+}
+
+.actions .btn-primary { flex: 1; }
+
+/* ---------- Etapas do formulário ---------- */
+
+.step {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 28px 24px 40px;
+}
+
+.progress {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 22px;
+}
+
+.progress__bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--creme-escuro);
+  overflow: hidden;
+}
+
+.progress__bar.is-filled { background: var(--azul); }
+
+.step__eyebrow {
+  color: var(--azul);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.step__title {
+  font-size: 1.5rem;
+  margin: 0 0 6px;
+  color: var(--texto);
+  font-weight: 900;
+}
+
+.step__desc {
+  color: var(--texto-suave);
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+.field {
+  margin-bottom: 22px;
+}
+
+.field label.field__label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: var(--texto);
+}
+
+.field__hint {
+  display: block;
+  color: var(--texto-suave);
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+/* status de busca automática (ex.: endereço pelo CEP) — sem margin extra, some quando vazio */
+.field__hint.status {
+  margin-bottom: 0;
+  margin-top: 6px;
+}
+.field__hint.status:empty { display: none; }
+.field__hint.status.is-error { color: var(--erro); }
+.field__hint.status.is-success { color: var(--azul); }
+
+.field input[type="text"],
+.field input[type="email"],
+.field input[type="tel"],
+.field textarea {
+  width: 100%;
+  border: 1.5px solid var(--creme-escuro);
+  border-radius: 10px;
+  padding: 13px 14px;
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--texto);
+  background: var(--branco);
+  transition: border-color 0.15s ease;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: none;
+  border-color: var(--azul);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.field-error {
+  display: none;
+  color: var(--erro);
+  font-size: 0.85rem;
+  margin-top: 6px;
+}
+
+.field.has-error input,
+.field.has-error textarea {
+  border-color: var(--erro);
+}
+
+.field.has-error .field-error { display: block; }
+
+/* checkbox único de confirmação (ex.: autorização de compartilhamento de dados) */
+.field-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 500;
+  color: var(--texto);
+  line-height: 1.4;
+}
+
+.field-checkbox input[type="checkbox"] {
+  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--azul);
+  flex: 0 0 auto;
+}
+
+.field.has-error .field-checkbox input[type="checkbox"] {
+  outline: 2px solid var(--erro);
+  outline-offset: 2px;
+}
+
+/* lote de indicações (várias pessoas/oportunidades no mesmo envio) */
+.indicacoes-batch { margin: 4px 0 20px; }
+
+.indicacoes-batch__list { list-style: none; margin: 0 0 12px; padding: 0; }
+
+.indicacoes-batch__list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--creme-escuro);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: var(--creme);
+  font-size: 0.9rem;
+}
+
+.indicacoes-batch__list .item-remove {
+  background: none;
+  border: none;
+  color: var(--erro);
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-family: inherit;
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+
+.btn-add-item {
+  background: none;
+  border: 1.5px dashed var(--azul);
+  color: var(--azul);
+  border-radius: 10px;
+  padding: 13px;
+  width: 100%;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.btn-add-item:hover { background: var(--azul-tint); }
+
+.btn-add-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: none;
+}
+
+/* opções (radio / checkbox estilo cartão) */
+
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.option {
+  position: relative;
+}
+
+.option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.option label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1.5px solid var(--creme-escuro);
+  border-radius: 10px;
+  padding: 13px 14px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.option__letter {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--creme-escuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.option input:checked + label {
+  border-color: var(--azul);
+  background: var(--azul-tint);
+}
+
+.option input:checked + label .option__letter {
+  background: var(--azul);
+  border-color: var(--azul);
+  color: #fff;
+}
+
+.option input:focus-visible + label {
+  outline: 2px solid var(--azul);
+  outline-offset: 2px;
+}
+
+/* sim / não em linha */
+
+.simnao {
+  display: flex;
+  gap: 10px;
+}
+
+.simnao .option { flex: 1; }
+.simnao .option label { justify-content: center; }
+.simnao .option__letter { display: none; }
+
+/* ---------- Tela de agradecimento ---------- */
+
+.thanks {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  color: #fff;
+  background: var(--azul-escuro);
+}
+
+.thanks__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.thanks__content {
+  position: relative;
+  z-index: 2;
+  margin: auto;
+  padding: 40px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.thanks__content.text-pos-top { margin: 40px auto auto; }
+.thanks__content.text-pos-center { margin: auto; }
+.thanks__content.text-pos-bottom { margin: auto auto 40px; }
+
+.thanks__check {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--creme);
+  color: var(--azul-escuro);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  margin-bottom: 6px;
+  font-weight: 900;
+}
+
+.thanks__title {
+  font-size: 1.7rem;
+  margin: 0;
+  font-weight: 900;
+}
+
+.thanks__message {
+  margin: 0;
+  color: #dfe7f2;
+  line-height: 1.55;
+  max-width: 46ch;
+}
+
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  background: var(--creme);
+  color: var(--azul-escuro);
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.btn-whatsapp:hover { box-shadow: 0 10px 28px rgba(0, 0, 0, 0.3); }
+
+/* ---------- utilitários ---------- */
+
+.hidden { display: none !important; }
+
+.submit-error {
+  color: var(--erro);
+  background: rgba(194, 59, 46, 0.08);
+  border: 1px solid rgba(194, 59, 46, 0.25);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 16px;
+  font-size: 0.9rem;
+  display: none;
+}
+
+.submit-error.is-visible { display: block; }
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.honeypot { position: absolute; left: -9999px; top: -9999px; }
+
+/* ---------- Telas maiores (tablet / desktop) ---------- */
+
+@media (min-width: 900px) {
+  body {
+    padding: 48px 24px;
+    align-items: center;
+  }
+
+  #app {
+    max-width: 1000px;
+    min-height: auto;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px rgba(2, 75, 165, 0.18);
+  }
+
+  /* tela inicial e agradecimento viram duas colunas: foto + conteúdo */
+  .hero,
+  .thanks {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 620px;
+  }
+
+  .hero__media,
+  .thanks__media {
+    position: relative;
+    inset: auto;
+    height: 100%;
+  }
+
+  .hero__content {
+    position: relative;
+    margin-top: 0;
+    height: 100%;
+    justify-content: center;
+    padding: 56px;
+    gap: 20px;
+  }
+
+  .hero__title { font-size: 2.5rem; }
+  .hero__title.title-size-small { font-size: 2rem; }
+  .hero__title.title-size-large { font-size: 3rem; }
+  .hero__subtitle { font-size: 1.05rem; max-width: 40ch; }
+
+  .hero .btn-primary {
+    width: auto;
+    align-self: flex-start;
+    padding: 16px 36px;
+  }
+
+  .thanks__content {
+    height: 100%;
+    margin: 0;
+    padding: 56px;
+  }
+
+  .thanks__message { max-width: 40ch; }
+
+  /* etapas do formulário: card mais largo, conteúdo com leitura confortável */
+  .step {
+    min-height: 560px;
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 56px 0 64px;
+    justify-content: center;
+  }
+
+  .actions {
+    max-width: 600px;
+    margin: -12px auto 0;
+    padding: 0 0 56px;
+  }
+}

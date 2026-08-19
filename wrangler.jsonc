@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "formsvagas",
+  "main": "src/index.js",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "solua-candidaturas",
+      "database_id": "80558e60-24ec-41c8-b8ac-535e35763e32"
+    }
+  ]
+}

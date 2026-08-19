@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Convite</title>
+  <meta name="theme-color" content="#024ba5" />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700,900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --papel: #fbf6ec; --papel-sombra: #e7dec8;
+      --envelope: #f2ede6; --envelope-forro: #e2d9c9;
+      --tinta: #1c2733; --destaque: #024ba5;
+      --fundo-1: #f2ede6; --fundo-2: #e2d9c9;
+      --cor-selo: #024ba5; --raio-botao: 999px; --overlay-opacidade: 0.55;
+      font-size: 16px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; min-height: 100%; }
+    body {
+      font-family: "Satoshi", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: linear-gradient(180deg, var(--fundo-1), var(--fundo-2));
+      color: var(--tinta);
+    }
+    .oculto { display: none !important; }
+    #app { position: relative; min-height: 100vh; overflow-x: hidden; }
+
+    #fundo-tela-cheia { position: fixed; inset: 0; z-index: 0; opacity: 0; transition: opacity 0.6s ease; pointer-events: none; }
+    #fundo-tela-cheia.ativo { opacity: 1; }
+    #fundo-tela-cheia img, #fundo-tela-cheia video { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; }
+    .fundo-overlay { position: absolute; inset: 0; background: rgba(0, 0, 0, var(--overlay-opacidade)); }
+
+    .etapa { position: relative; z-index: 1; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 32px 20px; }
+
+    /* envelope */
+    #envelope { width: min(340px, 88vw); aspect-ratio: 3 / 2; position: relative; cursor: pointer; perspective: 1000px; }
+    .envelope-corpo { position: absolute; inset: 0; background: var(--envelope); border-radius: 6px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25); }
+    .envelope-forro { position: absolute; inset: 6px; background: var(--envelope-forro); border-radius: 4px; }
+    #carta-espiando {
+      position: absolute; left: 8%; right: 8%; top: 6%; bottom: 20%; background: var(--papel);
+      border-radius: 4px; box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15); transition: transform 0.5s ease; z-index: 1;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .envelope-aba {
+      position: absolute; left: 0; right: 0; top: 0; height: 55%; background: var(--envelope);
+      clip-path: polygon(0 0, 100% 0, 50% 100%); transform-origin: top; transition: transform 0.6s ease; z-index: 3;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+    }
+    #envelope.aberto .envelope-aba { transform: rotateX(180deg); }
+    #envelope.aberto #carta-espiando { transform: translateY(-46%); }
+    #btn-selo {
+      position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); width: 56px; height: 56px;
+      border-radius: 50%; background: var(--cor-selo); color: #fff; border: none; cursor: pointer;
+      font-weight: 900; font-size: 1.1rem; z-index: 4; box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+    }
+    #envelope.aberto #btn-selo { display: none; }
+    .textura { background-image: radial-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px); background-size: 3px 3px; }
+    #instrucao-selo { text-align: center; margin-top: 24px; color: #fff; font-size: 0.9rem; letter-spacing: 0.04em; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
+
+    /* carta */
+    .carta { width: min(480px, 92vw); background: var(--papel); border-radius: 10px; padding: 40px 32px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); text-align: center; }
+    #carta-logo { font-size: 1.6rem; font-weight: 900; margin-bottom: 16px; color: var(--destaque); }
+    #carta-logo img { max-height: 56px; }
+    #txt-chamada { font-size: 0.8rem; letter-spacing: 0.12em; color: var(--destaque); font-weight: 700; margin: 0 0 4px; }
+    #txt-endereco { font-size: 1.4rem; font-weight: 900; margin: 0 0 20px; }
+    #txt-anfitriao { font-size: 0.75rem; letter-spacing: 0.1em; color: #6b7280; margin-bottom: 16px; }
+    #txt-saudacao { margin-bottom: 8px; }
+    #txt-titulo { font-size: 1.8rem; font-weight: 900; margin: 8px 0; }
+    #txt-subtitulo { font-size: 0.8rem; letter-spacing: 0.1em; color: var(--destaque); margin-bottom: 16px; }
+    #txt-mensagem { line-height: 1.6; margin-bottom: 20px; white-space: pre-line; }
+
+    #midia-container { margin: 20px 0; position: relative; }
+    .midia-moldura { border-radius: 8px; overflow: hidden; position: relative; }
+    .midia-moldura img, .midia-moldura video { width: 100%; display: block; }
+    .midia-legenda { font-size: 0.8rem; color: #6b7280; margin-top: 8px; }
+    .midia-placeholder { padding: 40px 16px; background: var(--envelope-forro); text-align: center; font-size: 0.85rem; color: #6b7280; }
+    .midia-som-btn { position: absolute; bottom: 12px; right: 12px; background: rgba(0, 0, 0, 0.6); color: #fff; border: none; padding: 6px 12px; border-radius: var(--raio-botao); font-size: 0.7rem; cursor: pointer; }
+    .mini-galeria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
+    .mini-galeria img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 4px; }
+
+    #contagem-regressiva { display: flex; gap: 12px; justify-content: center; margin: 20px 0; }
+    .contagem-item { background: var(--envelope-forro); border-radius: 8px; padding: 10px 14px; min-width: 56px; }
+    .contagem-item .n { display: block; font-size: 1.3rem; font-weight: 900; color: var(--destaque); }
+    .contagem-item .l { display: block; font-size: 0.6rem; letter-spacing: 0.08em; color: #6b7280; }
+    .contagem-hoje .n { font-size: 1rem; }
+
+    .info-linha { margin: 6px 0; font-size: 0.95rem; }
+    #bloco-trajes, #aviso-extra { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--papel-sombra); font-size: 0.85rem; }
+
+    .btn {
+      appearance: none; border: none; border-radius: var(--raio-botao); padding: 14px 28px; font-size: 0.95rem;
+      font-weight: 700; cursor: pointer; font-family: inherit; background: var(--destaque); color: #fff;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-outline { background: transparent; color: var(--destaque); border: 1.5px solid var(--destaque); }
+    .btn-block { width: 100%; }
+    .acoes-carta { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+
+    /* formulário */
+    .form-carta { width: min(480px, 92vw); background: var(--papel); border-radius: 10px; padding: 36px 28px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); }
+    #txt-form-titulo { font-size: 1.4rem; font-weight: 900; margin: 0 0 6px; text-align: center; }
+    #txt-form-subtitulo { text-align: center; color: #6b7280; margin: 0 0 24px; font-size: 0.9rem; }
+    .campo { margin-bottom: 16px; }
+    .campo label { display: block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; margin-bottom: 6px; color: #6b7280; }
+    .campo input, .campo select, .campo textarea {
+      width: 100%; border: 1.5px solid var(--papel-sombra); border-radius: 8px; padding: 12px 14px;
+      font-size: 0.95rem; font-family: inherit; background: #fff; color: var(--tinta);
+    }
+    .campo input:focus, .campo select:focus, .campo textarea:focus { outline: none; border-color: var(--destaque); }
+    .linha-dupla { display: flex; gap: 12px; }
+    .linha-dupla .campo { flex: 1; }
+    .erro-envio { color: #c23b2e; font-size: 0.85rem; margin: 10px 0 0; text-align: center; }
+
+    /* confirmação */
+    .confirmacao-carta { width: min(480px, 92vw); background: var(--papel); border-radius: 10px; padding: 40px 28px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2); text-align: center; }
+    .selo-check { width: 56px; height: 56px; border-radius: 50%; background: var(--destaque); color: #fff; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.5rem; font-weight: 900; }
+    .resumo-linha { margin: 6px 0; font-size: 0.9rem; }
+    #status-envio { margin-top: 16px; font-size: 0.85rem; color: #6b7280; }
+    .acoes-confirmacao { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 24px; }
+    #rodape-contato { margin-top: 24px; font-size: 0.8rem; color: #6b7280; }
+    #rodape-contato a { color: var(--destaque); text-decoration: none; }
+
+    .confete { position: fixed; top: -10px; width: 8px; height: 14px; z-index: 999; animation: cair linear forwards; }
+    @keyframes cair { to { transform: translateY(110vh) rotate(360deg); } }
+
+    @media (max-width: 480px) { .linha-dupla { flex-direction: column; gap: 0; } }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="fundo-tela-cheia"></div>
+
+    <!-- ETAPA 1: envelope -->
+    <section class="etapa" id="etapa-envelope">
+      <div>
+        <div id="envelope">
+          <div class="envelope-aba textura"></div>
+          <div class="envelope-corpo textura">
+            <div class="envelope-forro"></div>
+          </div>
+          <div id="carta-espiando" tabindex="0" role="button" aria-label="Abrir convite">
+            <div id="selo-iniciais" style="font-weight: 900; font-size: 1.4rem; color: var(--destaque);"></div>
+          </div>
+          <button id="btn-selo" type="button" aria-label="Abrir convite">✉</button>
+        </div>
+        <p id="instrucao-selo">Toque no selo para abrir o convite</p>
+      </div>
+    </section>
+
+    <!-- ETAPA 2: carta -->
+    <section class="etapa oculto" id="etapa-carta">
+      <div class="carta">
+        <div id="carta-logo"></div>
+        <p id="txt-chamada"></p>
+        <h1 id="txt-endereco"></h1>
+        <p id="txt-anfitriao"></p>
+        <p id="txt-saudacao"></p>
+        <h2 id="txt-titulo"></h2>
+        <p id="txt-subtitulo"></p>
+        <p id="txt-mensagem"></p>
+
+        <div id="midia-container"></div>
+        <div id="galeria-container"></div>
+
+        <div id="contagem-regressiva" class="oculto"></div>
+
+        <p class="info-linha"><strong id="txt-data"></strong></p>
+        <p class="info-linha" id="txt-hora"></p>
+        <p class="info-linha"><strong id="txt-local-nome"></strong></p>
+        <p class="info-linha" id="txt-local-endereco"></p>
+
+        <div id="bloco-trajes" class="oculto"><strong>Traje:</strong> <span id="txt-traje"></span></div>
+        <div id="aviso-extra" class="oculto">
+          <strong id="aviso-extra-titulo"></strong>
+          <p id="aviso-extra-texto"></p>
+        </div>
+
+        <div class="acoes-carta">
+          <button class="btn btn-block" id="btn-ir-formulario" type="button">Confirmar presença</button>
+          <button class="btn btn-outline btn-block" id="btn-voltar-envelope" type="button">Voltar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ETAPA 3: formulário -->
+    <section class="etapa oculto" id="etapa-form">
+      <form class="form-carta" id="form-confirmar" novalidate>
+        <h2 id="txt-form-titulo"></h2>
+        <p id="txt-form-subtitulo"></p>
+
+        <div class="campo">
+          <label for="campo-nome">Nome completo</label>
+          <input type="text" id="campo-nome" name="nome" required />
+        </div>
+
+        <div class="linha-dupla" id="linha-email-tel">
+          <div class="campo" id="grupo-email">
+            <label for="campo-email">E-mail</label>
+            <input type="email" id="campo-email" name="email" />
+          </div>
+          <div class="campo" id="grupo-telefone">
+            <label for="campo-telefone">Telefone</label>
+            <input type="tel" id="campo-telefone" name="telefone" />
+          </div>
+        </div>
+
+        <div class="linha-dupla" id="linha-empresa-acomp">
+          <div class="campo" id="grupo-empresa">
+            <label for="campo-empresa">Empresa</label>
+            <input type="text" id="campo-empresa" name="empresa" />
+          </div>
+          <div class="campo" id="grupo-acompanhantes">
+            <label for="campo-acompanhantes">Acompanhantes</label>
+            <select id="campo-acompanhantes" name="acompanhantes"></select>
+          </div>
+        </div>
+
+        <div class="campo" id="grupo-restricoes">
+          <label for="campo-restricoes">Restrições alimentares</label>
+          <input type="text" id="campo-restricoes" name="restricoes" />
+        </div>
+
+        <div class="campo" id="grupo-extra">
+          <label id="label-extra" for="campo-extra"></label>
+          <textarea id="campo-extra" name="extra" rows="3"></textarea>
+        </div>
+
+        <p class="erro-envio oculto" id="status-envio-erro"></p>
+
+        <button class="btn btn-block" id="btn-enviar-form" type="submit">Confirmar presença</button>
+        <button class="btn btn-outline btn-block" id="btn-voltar-carta" type="button" style="margin-top: 8px;">Voltar</button>
+      </form>
+    </section>
+
+    <!-- ETAPA 4: confirmação -->
+    <section class="etapa oculto" id="etapa-confirmacao">
+      <div class="confirmacao-carta">
+        <div class="selo-check">✓</div>
+        <h2>Presença confirmada!</h2>
+        <p class="resumo-linha"><strong id="resumo-nome"></strong></p>
+        <p class="resumo-linha" id="resumo-email-wrap">E-mail: <span id="resumo-email"></span></p>
+        <p class="resumo-linha" id="resumo-acompanhantes-wrap"><span id="resumo-acompanhantes"></span></p>
+        <p id="status-envio"></p>
+        <div class="acoes-confirmacao">
+          <a class="btn btn-outline" id="link-mapa" href="#" target="_blank" rel="noopener">Ver no mapa</a>
+          <a class="btn btn-outline" id="link-trajes" href="#" target="_blank" rel="noopener">Sobre o traje</a>
+          <button class="btn btn-outline" id="link-calendario" type="button">Adicionar ao calendário</button>
+          <button class="btn btn-outline" id="link-compartilhar" type="button">Compartilhar convite</button>
+        </div>
+        <button class="btn btn-block" id="btn-nova-confirmacao" type="button" style="margin-top: 16px;">Nova confirmação</button>
+        <div id="rodape-contato"></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="/convite.js"></script>
+</body>
+</html>

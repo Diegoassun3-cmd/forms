@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Venda ou alugue seu imóvel com a Solua</title>
+  <meta name="description" content="Cadastre seu imóvel para venda ou locação com a Solua Imóveis" />
+  <meta name="theme-color" content="#024ba5" />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app">
+
+    <!-- ===================== TELA INICIAL ===================== -->
+    <section class="hero" data-screen="landing">
+      <div class="hero__media">
+        <img class="hero__image" id="landing-image" src="/images/placeholder.svg" alt="" />
+        <div class="hero__overlay" id="landing-overlay"></div>
+        <img class="brand-logo hidden" id="landing-logo" alt="" />
+      </div>
+      <div class="hero__content">
+        <h1 class="hero__title" id="landing-title">Seu imóvel, novos caminhos.</h1>
+        <p class="hero__subtitle" id="landing-subtitle">
+          Quer vender ou alugar seu imóvel? Deixe seus dados e as informações básicas da
+          propriedade. A equipe Solua vai entrar em contato para entender seu objetivo e
+          apresentar as melhores possibilidades.
+        </p>
+        <button class="btn btn-primary" id="btn-start" type="button">Cadastrar meu imóvel</button>
+        <p class="footer-note hidden" id="landing-footer"></p>
+      </div>
+    </section>
+
+    <!-- ===================== FORMULÁRIO (multi-etapas) ===================== -->
+    <form id="form" class="hidden" novalidate>
+
+      <!-- honeypot anti-spam -->
+      <div class="honeypot" aria-hidden="true">
+        <label>Não preencha este campo<input type="text" name="website" id="website" tabindex="-1" autocomplete="off" /></label>
+      </div>
+
+      <!-- ETAPA 1 -->
+      <section class="step" data-step="1">
+        <div class="progress"></div>
+        <span class="step__eyebrow">01</span>
+        <h2 class="step__title">Seus dados</h2>
+        <p class="step__desc">Para começarmos, precisamos te conhecer.</p>
+
+        <div class="field">
+          <label class="field__label" for="nome">Nome completo</label>
+          <input type="text" id="nome" name="nome" autocomplete="name" required />
+          <span class="field-error">Informe seu nome completo.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="whatsapp">WhatsApp</label>
+          <input type="tel" id="whatsapp" name="whatsapp" placeholder="(00) 00000-0000" autocomplete="tel" required />
+          <span class="field-error">Informe um WhatsApp com DDD.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="email">E-mail</label>
+          <span class="field__hint">Campo opcional.</span>
+          <input type="email" id="email" name="email" autocomplete="email" />
+        </div>
+      </section>
+
+      <!-- ETAPA 2 -->
+      <section class="step hidden" data-step="2">
+        <div class="progress"></div>
+        <span class="step__eyebrow">02</span>
+        <h2 class="step__title">O que você deseja fazer com o imóvel?</h2>
+
+        <div class="field">
+          <div class="options" data-name="objetivo" data-error="Selecione uma opção.">
+            <div class="option">
+              <input type="radio" name="objetivo" id="objetivo-vender" value="Quero vender" />
+              <label for="objetivo-vender"><span class="option__letter">A</span>Quero vender</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="objetivo" id="objetivo-alugar" value="Quero alugar" />
+              <label for="objetivo-alugar"><span class="option__letter">B</span>Quero alugar</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="objetivo" id="objetivo-indeciso" value="Ainda não decidi" />
+              <label for="objetivo-indeciso"><span class="option__letter">C</span>Ainda não decidi</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="objetivo">Selecione uma opção.</span>
+        </div>
+      </section>
+
+      <!-- ETAPA 3 -->
+      <section class="step hidden" data-step="3">
+        <div class="progress"></div>
+        <span class="step__eyebrow">03</span>
+        <h2 class="step__title">Onde fica o imóvel?</h2>
+
+        <div class="field">
+          <label class="field__label" for="cep">CEP</label>
+          <span class="field__hint">Digite o CEP que a gente busca o endereço automaticamente.</span>
+          <input type="text" id="cep" name="cep" placeholder="00000-000" inputmode="numeric" autocomplete="postal-code" required />
+          <span class="field-error">Informe o CEP do imóvel.</span>
+          <span class="field__hint status" id="cep-status"></span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="endereco">Endereço</label>
+          <input type="text" id="endereco" name="endereco" placeholder="Rua, avenida..." required />
+          <span class="field-error">Informe o endereço do imóvel.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="numero">Número</label>
+          <span class="field__hint">Opcional — deixe em branco se o imóvel não tiver.</span>
+          <input type="text" id="numero" name="numero" />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="complemento">Complemento</label>
+          <span class="field__hint">Opcional. Ex.: bloco, apto, casa 2.</span>
+          <input type="text" id="complemento" name="complemento" />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="bairro">Bairro</label>
+          <input type="text" id="bairro" name="bairro" required />
+          <span class="field-error">Informe o bairro do imóvel.</span>
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="cidade">Cidade</label>
+          <input type="text" id="cidade" name="cidade" required />
+          <span class="field-error">Informe a cidade do imóvel.</span>
+        </div>
+      </section>
+
+      <!-- ETAPA 4 -->
+      <section class="step hidden" data-step="4">
+        <div class="progress"></div>
+        <span class="step__eyebrow">04</span>
+        <h2 class="step__title">Tipo de imóvel</h2>
+
+        <div class="field">
+          <div class="options" data-name="tipoImovel" data-error="Selecione uma opção.">
+            <div class="option">
+              <input type="radio" name="tipoImovel" id="tipoimovel-casa" value="Casa" />
+              <label for="tipoimovel-casa"><span class="option__letter">A</span>Casa</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="tipoImovel" id="tipoimovel-apartamento" value="Apartamento" />
+              <label for="tipoimovel-apartamento"><span class="option__letter">B</span>Apartamento</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="tipoImovel" id="tipoimovel-terreno" value="Terreno" />
+              <label for="tipoimovel-terreno"><span class="option__letter">C</span>Terreno</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="tipoImovel" id="tipoimovel-comercial" value="Comercial" />
+              <label for="tipoimovel-comercial"><span class="option__letter">D</span>Comercial</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="tipoImovel" id="tipoimovel-rural" value="Rural" />
+              <label for="tipoimovel-rural"><span class="option__letter">E</span>Rural</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="tipoImovel" id="tipoimovel-outro" value="Outro" />
+              <label for="tipoimovel-outro"><span class="option__letter">F</span>Outro</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="tipoImovel">Selecione uma opção.</span>
+        </div>
+      </section>
+
+      <!-- ETAPA 5 -->
+      <section class="step hidden" data-step="5">
+        <div class="progress"></div>
+        <span class="step__eyebrow">05</span>
+        <h2 class="step__title">Valor e autorização</h2>
+
+        <div class="field">
+          <label class="field__label">Você já tem um valor em mente?</label>
+          <div class="options simnao" data-name="temValor" data-error="Selecione uma opção.">
+            <div class="option">
+              <input type="radio" name="temValor" id="temvalor-sim" value="Sim" />
+              <label for="temvalor-sim">Sim</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="temValor" id="temvalor-nao" value="Não" />
+              <label for="temvalor-nao">Não</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="temValor">Selecione uma opção.</span>
+        </div>
+
+        <div class="cond-group hidden" data-cond="Sim">
+          <div class="field">
+            <label class="field__label" for="valorPretendido">Valor pretendido</label>
+            <input type="text" id="valorPretendido" name="valorPretendido" placeholder="R$" data-required-if-active="true" />
+            <span class="field-error">Informe o valor pretendido.</span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field__label">Autorização LGPD</label>
+          <span class="field__hint">
+            Autorizo a Solua Imóveis a armazenar e tratar os dados informados neste formulário,
+            conforme a Lei Geral de Proteção de Dados (LGPD), exclusivamente para fins de avaliação
+            e contato sobre este imóvel.
+          </span>
+          <div class="options simnao" data-name="lgpd" data-error="É necessário autorizar para enviar o cadastro.">
+            <div class="option">
+              <input type="radio" name="lgpd" id="lgpd-sim" value="Sim" />
+              <label for="lgpd-sim">Sim</label>
+            </div>
+            <div class="option">
+              <input type="radio" name="lgpd" id="lgpd-nao" value="Não" />
+              <label for="lgpd-nao">Não</label>
+            </div>
+          </div>
+          <span class="field-error" data-for="lgpd">É necessário autorizar para enviar o cadastro.</span>
+        </div>
+
+        <div class="submit-error" id="submit-error"></div>
+      </section>
+
+      <!-- As páginas extras configuráveis pelo /admin são inseridas aqui dinamicamente pelo captacao.js -->
+
+      <div class="actions">
+        <button class="btn btn-ghost" id="btn-back" type="button">Voltar</button>
+        <button class="btn btn-primary" id="btn-next" type="button">Avançar</button>
+      </div>
+    </form>
+
+    <!-- ===================== TELA DE AGRADECIMENTO ===================== -->
+    <section class="thanks hidden" data-screen="thanks">
+      <div class="hero__media">
+        <img class="hero__image" id="thanks-image" src="/images/placeholder.svg" alt="" />
+        <div class="hero__overlay" id="thanks-overlay"></div>
+        <img class="brand-logo hidden" id="thanks-logo" alt="" />
+      </div>
+      <div class="thanks__content">
+        <div class="thanks__check">✓</div>
+        <h1 class="thanks__title" id="thanks-title">Recebemos os dados do seu imóvel!</h1>
+        <p class="thanks__message" id="thanks-message">
+          Nossa equipe vai analisar as informações e entrar em contato em breve para conversar
+          sobre as melhores possibilidades para vender ou alugar seu imóvel.
+        </p>
+        <a class="btn btn-primary btn-whatsapp hidden" id="thanks-whatsapp" href="#" target="_blank" rel="noopener">
+          Falar agora no WhatsApp
+        </a>
+        <p class="footer-note hidden" id="thanks-footer"></p>
+      </div>
+    </section>
+
+  </div>
+
+  <script src="/captacao.js"></script>
+</body>
+</html>

@@ -1,0 +1,2691 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Painel — Solua Imóveis</title>
+  <meta name="theme-color" content="#024ba5" />
+  <link rel="preconnect" href="https://api.fontshare.com" crossorigin />
+  <link rel="stylesheet" href="/styles.css" />
+  <style>
+    body { justify-content: center; align-items: flex-start; padding: 32px 16px; }
+    #admin { width: 100%; max-width: 1200px; background: var(--branco); border-radius: 14px; box-shadow: 0 0 40px rgba(2,75,165,0.08); padding: 28px; }
+    .admin__header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+    .admin__title { font-size: 1.4rem; font-weight: 900; color: var(--texto); margin: 0; }
+    .admin__gate { max-width: 360px; margin: 60px auto; text-align: center; }
+    .admin__gate input { width: 100%; margin-bottom: 12px; }
+    .admin__count { color: var(--texto-suave); font-size: 0.9rem; }
+
+    .tabs { display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1.5px solid var(--creme-escuro); flex-wrap: wrap; }
+    .tab-btn {
+      background: none; border: none; padding: 10px 4px; margin-bottom: -1.5px;
+      font-family: inherit; font-weight: 700; font-size: 0.95rem; color: var(--texto-suave);
+      cursor: pointer; border-bottom: 2.5px solid transparent;
+    }
+    .tab-btn.is-active { color: var(--azul); border-bottom-color: var(--azul); }
+    .tab-panel { display: none; }
+    .tab-panel.is-active { display: block; }
+
+    table { border-collapse: collapse; width: 100%; font-size: 0.85rem; }
+    thead th {
+      text-align: left; background: var(--azul-tint); color: var(--azul-escuro);
+      padding: 10px 12px; position: sticky; top: 0; white-space: nowrap; font-weight: 700;
+    }
+    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--creme-escuro); vertical-align: top; }
+    tbody tr:hover { background: var(--creme); }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--creme-escuro); border-radius: 10px; }
+    .cell-wrap { max-width: 260px; white-space: pre-wrap; }
+    .error-msg { color: var(--erro); margin-top: 10px; font-size: 0.9rem; display: none; }
+    .error-msg.is-visible { display: block; }
+    .success-msg { color: var(--azul); margin-top: 10px; font-size: 0.9rem; display: none; }
+    .success-msg.is-visible { display: block; }
+    .toolbar { display: flex; gap: 10px; }
+    .btn-small { padding: 10px 18px; font-size: 0.9rem; }
+    .btn-delete {
+      background: none; border: 1.5px solid var(--erro); color: var(--erro);
+      border-radius: 8px; padding: 6px 12px; font-size: 0.8rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+    }
+    .btn-delete:hover { background: rgba(194, 59, 46, 0.08); }
+    .btn-delete:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-icon {
+      background: var(--creme); border: 1.5px solid var(--creme-escuro); color: var(--texto);
+      border-radius: 8px; width: 32px; height: 32px; font-size: 1rem; cursor: pointer; line-height: 1;
+    }
+    .btn-icon:hover { border-color: var(--azul); color: var(--azul); }
+    .btn-icon:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .settings-section { max-width: 640px; margin-bottom: 32px; }
+    .settings-section h2 { font-size: 1.05rem; font-weight: 900; color: var(--texto); margin: 0 0 4px; }
+    .settings-section .field__hint { margin-bottom: 16px; }
+    .settings-row { display: flex; gap: 16px; }
+    .settings-row .field { flex: 1; }
+    .settings-select {
+      width: 100%; border: 1.5px solid var(--creme-escuro); border-radius: 10px;
+      padding: 13px 14px; font-size: 1rem; font-family: inherit; color: var(--texto); background: var(--branco);
+    }
+    .field-checkbox { display: flex; align-items: center; gap: 8px; font-weight: 700; cursor: pointer; }
+    .field-checkbox input { width: auto; }
+
+    /* upload de imagem */
+    .image-upload { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .image-upload__preview {
+      width: 96px; height: 96px; object-fit: cover; border-radius: 10px; background: var(--creme);
+      border: 1.5px solid var(--creme-escuro);
+    }
+    .image-upload__preview.is-empty { opacity: 0.35; }
+    .image-upload__actions { display: flex; flex-direction: column; gap: 8px; }
+    .image-upload__pick {
+      display: inline-block; cursor: pointer; text-align: center;
+    }
+    .image-upload__status { font-size: 0.8rem; color: var(--texto-suave); }
+    .image-upload__status.is-error { color: var(--erro); }
+
+    /* páginas extras */
+    .extra-page {
+      border: 1.5px solid var(--creme-escuro); border-radius: 12px; padding: 16px; margin-bottom: 16px; background: var(--creme);
+    }
+    .extra-page__header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .extra-page-title { flex: 1; font-weight: 700; background: var(--branco); }
+    .extra-page__move { display: flex; gap: 4px; }
+
+    .extra-q {
+      border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px; margin-bottom: 10px; background: var(--branco);
+    }
+    .extra-q__row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+    .extra-q__move { display: flex; gap: 4px; }
+    .extra-q-label { flex: 1; min-width: 160px; }
+    .extra-q-type { width: auto; min-width: 150px; }
+    .extra-q__required { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--texto-suave); white-space: nowrap; }
+    .extra-q-options { width: 100%; margin-top: 4px; min-height: 60px; }
+    .btn-add-question, .btn-add-page {
+      background: none; border: 1.5px dashed var(--azul); color: var(--azul);
+      border-radius: 10px; padding: 12px; width: 100%; font-weight: 700; cursor: pointer; font-family: inherit;
+    }
+    .btn-add-question:hover, .btn-add-page:hover { background: var(--azul-tint); }
+
+    /* visão geral de páginas */
+    .pages-overview { list-style: none; margin: 0; padding: 0; max-width: 480px; }
+    .pages-overview li {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px solid var(--creme-escuro);
+      border-radius: 10px; margin-bottom: 8px; background: var(--creme);
+    }
+    .pages-overview .page-badge {
+      flex: 0 0 auto; width: 28px; height: 28px; border-radius: 50%; background: var(--azul); color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;
+    }
+    .pages-overview .page-name { font-weight: 700; flex: 1; }
+    .pages-overview .page-tag { color: var(--texto-suave); font-size: 0.8rem; }
+    .pages-overview li.is-fixed { opacity: 0.75; }
+    .pages-overview li.is-dragging { border-color: var(--azul); box-shadow: 0 6px 16px rgba(2,75,165,0.18); }
+    .drag-handle {
+      flex: 0 0 auto; cursor: grab; color: var(--texto-suave); font-size: 1.1rem; padding: 4px;
+      touch-action: none; user-select: none;
+    }
+    .drag-handle--disabled { cursor: default; opacity: 0.3; }
+
+    /* alternador de formulário (Vagas / Indicações) usado nas abas Páginas, Configurações e Visualizar */
+    .form-switch { display: inline-flex; gap: 4px; background: var(--creme); padding: 4px; border-radius: 999px; margin-bottom: 20px; }
+    .form-switch__btn {
+      border: none; background: none; padding: 8px 18px; border-radius: 999px;
+      font-family: inherit; font-weight: 700; font-size: 0.85rem; color: var(--texto-suave); cursor: pointer;
+    }
+    .form-switch__btn.is-active { background: var(--azul); color: #fff; }
+
+    /* email marketing: blocos do criativo */
+    .email-block {
+      border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px; margin-bottom: 10px; background: var(--creme);
+    }
+    .email-block__header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .email-block__type { flex: 1; font-weight: 700; font-size: 0.85rem; color: var(--azul); text-transform: uppercase; letter-spacing: 0.04em; }
+    .email-block__move { display: flex; gap: 4px; }
+    .email-block textarea, .email-block input[type="text"], .email-block input[type="number"] {
+      width: 100%; border: 1.5px solid var(--creme-escuro); border-radius: 8px; padding: 10px 12px;
+      font-size: 0.95rem; font-family: inherit; background: var(--branco); margin-bottom: 8px;
+    }
+    .email-block .image-upload__preview { width: 72px; height: 72px; }
+
+    .email-preview-wrap {
+      border: 1.5px solid var(--creme-escuro); border-radius: 12px; overflow: hidden; height: 520px; background: var(--creme);
+    }
+    .email-preview-wrap iframe { width: 100%; height: 100%; border: none; }
+
+    /* listas de templates/campanhas na aba Email Marketing */
+    .email-item-row {
+      display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px solid var(--creme-escuro);
+      border-radius: 10px; margin-bottom: 8px; background: var(--creme); flex-wrap: wrap;
+    }
+    .email-item-row__main { flex: 1; min-width: 180px; }
+    .email-item-row__title { font-weight: 700; }
+    .email-item-row__meta { color: var(--texto-suave); font-size: 0.82rem; margin-top: 2px; }
+    .email-item-row__actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .email-progress { background: var(--creme-escuro); border-radius: 999px; height: 8px; overflow: hidden; margin: 10px 0; }
+    .email-progress__bar { height: 100%; background: var(--azul); transition: width 0.2s ease; }
+
+    .status-badge {
+      display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700;
+    }
+    .status-badge.rascunho { background: var(--creme-escuro); color: var(--texto-suave); }
+    .status-badge.enviando { background: #fef3c7; color: #92400e; }
+    .status-badge.concluida { background: var(--azul-tint); color: var(--azul-escuro); }
+
+    /* pré-visualização */
+    .preview-toolbar { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
+    .preview-frame-wrap {
+      border: 1.5px solid var(--creme-escuro); border-radius: 12px; overflow: hidden; height: 80vh; max-height: 900px;
+    }
+    .preview-frame-wrap iframe { width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body>
+  <div id="admin">
+    <div class="admin__gate" id="gate">
+      <h1 class="admin__title" style="margin-bottom: 8px;">Área restrita</h1>
+      <p class="field__hint" style="margin-bottom: 16px;">Informe o token de administrador para entrar.</p>
+      <input type="password" id="token-input" placeholder="Token de administrador" autofocus />
+      <button class="btn btn-primary btn-small" id="btn-enter" type="button" style="width:100%;">Entrar</button>
+      <p class="error-msg" id="gate-error">Token inválido.</p>
+    </div>
+
+    <div id="content" class="hidden">
+      <div class="tabs">
+        <button class="tab-btn is-active" type="button" data-tab="candidaturas">Candidaturas</button>
+        <button class="tab-btn" type="button" data-tab="indicacoes">Indicações</button>
+        <button class="tab-btn" type="button" data-tab="captacoes">Captações</button>
+        <button class="tab-btn" type="button" data-tab="paginas">Páginas</button>
+        <button class="tab-btn" type="button" data-tab="config">Configurações</button>
+        <button class="tab-btn" type="button" data-tab="preview">Visualizar</button>
+        <button class="tab-btn" type="button" data-tab="email">Email Marketing</button>
+        <button class="tab-btn" type="button" data-tab="convite">Convite</button>
+      </div>
+
+      <!-- ===================== ABA: CANDIDATURAS ===================== -->
+      <div class="tab-panel is-active" id="tab-candidaturas">
+        <div class="admin__header">
+          <h1 class="admin__title">Candidaturas recebidas</h1>
+          <div class="toolbar">
+            <span class="admin__count" id="count"></span>
+            <button class="btn btn-ghost btn-small" id="btn-refresh" type="button">Atualizar</button>
+            <button class="btn btn-primary btn-small" id="btn-csv" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>WhatsApp</th>
+                <th>Cidade/Estado</th>
+                <th>CRECI</th>
+                <th>Experiência</th>
+                <th>Captação</th>
+                <th>Regiões</th>
+                <th>Tipos de imóvel</th>
+                <th>Disponibilidade</th>
+                <th>Veículo</th>
+                <th>Portfólio</th>
+                <th>Remuneração</th>
+                <th>Sobre você</th>
+                <th>LGPD</th>
+                <th>Perguntas extras</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== ABA: INDICAÇÕES ===================== -->
+      <div class="tab-panel" id="tab-indicacoes">
+        <div class="admin__header">
+          <h1 class="admin__title">Indicações recebidas</h1>
+          <div class="toolbar">
+            <span class="admin__count" id="count-indicacoes"></span>
+            <button class="btn btn-ghost btn-small" id="btn-refresh-indicacoes" type="button">Atualizar</button>
+            <button class="btn btn-primary btn-small" id="btn-csv-indicacoes" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Tipo</th>
+                <th>Indicado</th>
+                <th>WhatsApp indicado</th>
+                <th>E-mail indicado</th>
+                <th>Como conhece</th>
+                <th>Detalhes</th>
+                <th>Quem indicou</th>
+                <th>WhatsApp indicador</th>
+                <th>E-mail indicador</th>
+                <th>Autoriza contato</th>
+                <th>Perguntas extras</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rows-indicacoes"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== ABA: CAPTAÇÕES ===================== -->
+      <div class="tab-panel" id="tab-captacoes">
+        <div class="admin__header">
+          <h1 class="admin__title">Cadastros de imóveis recebidos</h1>
+          <div class="toolbar">
+            <span class="admin__count" id="count-captacoes"></span>
+            <button class="btn btn-ghost btn-small" id="btn-refresh-captacoes" type="button">Atualizar</button>
+            <button class="btn btn-primary btn-small" id="btn-csv-captacoes" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Nome</th>
+                <th>WhatsApp</th>
+                <th>E-mail</th>
+                <th>Objetivo</th>
+                <th>CEP</th>
+                <th>Endereço</th>
+                <th>Número</th>
+                <th>Complemento</th>
+                <th>Bairro</th>
+                <th>Cidade</th>
+                <th>Tipo de imóvel</th>
+                <th>Valor pretendido</th>
+                <th>LGPD</th>
+                <th>Perguntas extras</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rows-captacoes"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ===================== ABA: PÁGINAS (visão geral) ===================== -->
+      <div class="tab-panel" id="tab-paginas">
+        <h1 class="admin__title" style="margin-bottom: 8px;">Páginas do formulário</h1>
+        <div class="form-switch" data-panel="paginas">
+          <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
+          <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+          <button type="button" class="form-switch__btn" data-form="captacao">Captação</button>
+        </div>
+        <p class="field__hint" style="margin-bottom: 20px;">
+          Nessa ordem que a pessoa vê o formulário selecionado acima. As etapas fixas não têm como
+          reordenar. Arraste as páginas extras (ícone ⠿) pra cima ou pra baixo pra mudar a ordem delas.
+        </p>
+        <ul class="pages-overview" id="pages-overview"></ul>
+        <div class="toolbar" style="margin-top: 16px;">
+          <button class="btn btn-primary btn-small" id="btn-save-pages-order" type="button">Salvar ordem</button>
+        </div>
+        <p class="error-msg" id="pages-error"></p>
+        <p class="success-msg" id="pages-success">Salvo!</p>
+      </div>
+
+      <!-- ===================== ABA: CONFIGURAÇÕES ===================== -->
+      <div class="tab-panel" id="tab-config">
+        <h1 class="admin__title" style="margin-bottom: 8px;">Configurações do site</h1>
+        <div class="form-switch" data-panel="config">
+          <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
+          <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+          <button type="button" class="form-switch__btn" data-form="captacao">Captação</button>
+        </div>
+        <p class="field__hint" style="margin-bottom: 20px;">
+          Cada formulário tem sua própria configuração — escolha acima qual você quer editar.
+        </p>
+
+        <div class="settings-section">
+          <h2>Rodapé</h2>
+          <p class="field__hint">Opcional. Uma frase pequena que aparece na tela inicial e na final.</p>
+          <div class="field">
+            <label class="field__label" for="cfg-footer">Texto do rodapé</label>
+            <input type="text" id="cfg-footer" placeholder="Solua Imobiliária — Imóveis • Consórcios • Seguros — 25 anos ao seu lado." />
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Capa</h2>
+          <p class="field__hint">Foto usada na tela inicial e na de agradecimento.</p>
+          <div class="field">
+            <label class="field__label">Imagem</label>
+            <div class="image-upload">
+              <img class="image-upload__preview is-empty" id="cfg-capa-preview" alt="" />
+              <div class="image-upload__actions">
+                <label class="btn btn-ghost btn-small image-upload__pick">
+                  Escolher foto
+                  <input type="file" accept="image/*" id="cfg-capa-file" class="hidden" />
+                </label>
+                <button type="button" class="btn-delete" id="cfg-capa-remove">Remover</button>
+              </div>
+              <span class="image-upload__status" id="cfg-capa-status"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-capa-position">Posição da imagem</label>
+            <select class="settings-select" id="cfg-capa-position">
+              <option value="top">Topo</option>
+              <option value="center">Centro</option>
+              <option value="bottom">Base</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field-checkbox">
+              <input type="checkbox" id="cfg-capa-gradient" checked />
+              Mostrar gradiente escuro sobre a foto (celular e computador)
+            </label>
+            <span class="field__hint">Desligue se quiser a foto sem nenhum escurecimento por cima.</span>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Logo</h2>
+          <p class="field__hint">Opcional. Aparece sobre a foto, na tela inicial e na de agradecimento.</p>
+          <div class="field">
+            <label class="field__label">Imagem da logo</label>
+            <div class="image-upload">
+              <img class="image-upload__preview is-empty" id="cfg-logo-preview" alt="" />
+              <div class="image-upload__actions">
+                <label class="btn btn-ghost btn-small image-upload__pick">
+                  Escolher logo
+                  <input type="file" accept="image/*" id="cfg-logo-file" class="hidden" />
+                </label>
+                <button type="button" class="btn-delete" id="cfg-logo-remove">Remover</button>
+              </div>
+              <span class="image-upload__status" id="cfg-logo-status"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-logo-position">Posição da logo</label>
+            <select class="settings-select" id="cfg-logo-position">
+              <option value="top-left">Superior esquerda</option>
+              <option value="top-center">Superior centro</option>
+              <option value="top-right">Superior direita</option>
+              <option value="center">Centro</option>
+              <option value="bottom-left">Inferior esquerda</option>
+              <option value="bottom-right">Inferior direita</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-logo-size">Tamanho da logo</label>
+            <select class="settings-select" id="cfg-logo-size">
+              <option value="pequeno">Pequeno</option>
+              <option value="medio">Médio</option>
+              <option value="grande">Grande</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Tela inicial</h2>
+          <div class="field">
+            <label class="field__label" for="cfg-landing-title">Título</label>
+            <input type="text" id="cfg-landing-title" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-landing-title-size">Tamanho do título</label>
+            <select class="settings-select" id="cfg-landing-title-size">
+              <option value="small">Pequeno</option>
+              <option value="normal">Normal</option>
+              <option value="large">Grande</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-landing-subtitle">Subtítulo</label>
+            <textarea id="cfg-landing-subtitle" rows="3"></textarea>
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-landing-button">Texto do botão</label>
+            <input type="text" id="cfg-landing-button" />
+          </div>
+          <div class="settings-row">
+            <div class="field">
+              <label class="field__label" for="cfg-landing-align">Alinhamento do texto</label>
+              <select class="settings-select" id="cfg-landing-align">
+                <option value="left">Esquerda</option>
+                <option value="center">Centro</option>
+                <option value="right">Direita</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field__label" for="cfg-landing-pos">Posição do texto (celular)</label>
+              <select class="settings-select" id="cfg-landing-pos">
+                <option value="top">Topo</option>
+                <option value="center">Centro</option>
+                <option value="bottom">Base</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h2>Tela de agradecimento</h2>
+          <div class="field">
+            <label class="field__label" for="cfg-thanks-title">Título</label>
+            <input type="text" id="cfg-thanks-title" />
+          </div>
+          <div class="field">
+            <label class="field__label" for="cfg-thanks-message">Mensagem</label>
+            <textarea id="cfg-thanks-message" rows="3"></textarea>
+          </div>
+          <div class="settings-row">
+            <div class="field">
+              <label class="field__label" for="cfg-thanks-align">Alinhamento do texto</label>
+              <select class="settings-select" id="cfg-thanks-align">
+                <option value="left">Esquerda</option>
+                <option value="center">Centro</option>
+                <option value="right">Direita</option>
+              </select>
+            </div>
+            <div class="field">
+              <label class="field__label" for="cfg-thanks-pos">Posição do texto (celular)</label>
+              <select class="settings-select" id="cfg-thanks-pos">
+                <option value="top">Topo</option>
+                <option value="center">Centro</option>
+                <option value="bottom">Base</option>
+              </select>
+            </div>
+          </div>
+          <div id="cfg-whatsapp-fields">
+            <div class="field">
+              <label class="field__label" for="cfg-thanks-whats-number">Número do WhatsApp (com DDD e país)</label>
+              <span class="field__hint">Só números, ex.: 5511999999999. Deixe em branco pra não mostrar o botão.</span>
+              <input type="text" id="cfg-thanks-whats-number" placeholder="5511999999999" />
+            </div>
+            <div class="field">
+              <label class="field__label" for="cfg-thanks-whats-message">Mensagem pronta do WhatsApp (opcional)</label>
+              <input type="text" id="cfg-thanks-whats-message" placeholder="Olá! Acabei de enviar minha candidatura..." />
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section" style="max-width: 720px;">
+          <h2>Páginas extras</h2>
+          <p class="field__hint">
+            Cada página vira uma etapa nova no formulário, na ordem que aparecem aqui (depois da 05).
+            Use as setas pra reordenar páginas e perguntas.
+          </p>
+          <div id="extra-pages-editor"></div>
+          <button class="btn-add-page" type="button" id="btn-add-page">+ Nova página</button>
+        </div>
+
+        <button class="btn btn-primary" id="btn-save-config" type="button">Salvar configurações</button>
+        <p class="error-msg" id="config-error"></p>
+        <p class="success-msg" id="config-success">Salvo!</p>
+      </div>
+
+
+      <!-- ===================== ABA: VISUALIZAR ===================== -->
+      <div class="tab-panel" id="tab-preview">
+        <h1 class="admin__title" style="margin-bottom: 8px;">Visualizar o formulário</h1>
+        <div class="form-switch" data-panel="preview">
+          <button type="button" class="form-switch__btn is-active" data-form="vagas">Vagas</button>
+          <button type="button" class="form-switch__btn" data-form="indicacao">Indicações</button>
+          <button type="button" class="form-switch__btn" data-form="captacao">Captação</button>
+        </div>
+        <div class="preview-toolbar">
+          <button class="btn btn-ghost btn-small" id="btn-preview-refresh" type="button">Reiniciar (do começo)</button>
+          <button class="btn btn-ghost btn-small" id="btn-preview-skip" type="button">Pular pro final (sem responder)</button>
+          <a class="btn btn-ghost btn-small" id="btn-preview-newtab" href="/" target="_blank" rel="noopener">Abrir em nova aba</a>
+        </div>
+        <div class="preview-frame-wrap">
+          <iframe id="preview-frame" title="Pré-visualização do formulário"></iframe>
+        </div>
+      </div>
+
+      <!-- ===================== ABA: EMAIL MARKETING ===================== -->
+      <div class="tab-panel" id="tab-email">
+        <h1 class="admin__title" style="margin-bottom: 8px;">Email Marketing</h1>
+        <p class="field__hint" style="margin-bottom: 20px;">
+          Monte criativos, organize listas de contatos e dispare campanhas — tudo aqui, sem precisar de outra ferramenta.
+        </p>
+          <div class="settings-section">
+            <h2>Provedor de e-mail</h2>
+            <p class="field__hint">
+              Os disparos são feitos pela <a href="https://resend.com" target="_blank" rel="noopener">Resend</a>,
+              um serviço de envio de e-mail (não é sua caixa de e-mail pessoal). Crie uma conta gratuita, verifique
+              seu domínio de envio (ex.: soluaimoveis.com.br) em <em>Domains</em> e gere uma chave em <em>API Keys</em>.
+            </p>
+            <div class="field">
+              <label class="field__label" for="email-cfg-apikey">API key da Resend</label>
+              <span class="field__hint" id="email-cfg-apikey-hint">Deixe em branco pra manter a chave já salva.</span>
+              <input type="password" id="email-cfg-apikey" placeholder="re_xxxxxxxxxxxxxxxxxxxxxxxx" autocomplete="off" />
+            </div>
+            <div class="settings-row">
+              <div class="field">
+                <label class="field__label" for="email-cfg-fromname">Nome do remetente</label>
+                <input type="text" id="email-cfg-fromname" placeholder="Solua Imóveis" />
+              </div>
+              <div class="field">
+                <label class="field__label" for="email-cfg-fromemail">E-mail do remetente</label>
+                <span class="field__hint">Precisa ser de um domínio verificado na Resend.</span>
+                <input type="text" id="email-cfg-fromemail" placeholder="contato@soluaimoveis.com.br" />
+              </div>
+            </div>
+            <div class="field">
+              <label class="field__label" for="email-cfg-replyto">E-mail de resposta (opcional)</label>
+              <input type="text" id="email-cfg-replyto" placeholder="contato@soluaimoveis.com.br" />
+            </div>
+            <button class="btn btn-primary btn-small" id="btn-save-email-settings" type="button">Salvar provedor</button>
+            <p class="error-msg" id="email-settings-error"></p>
+            <p class="success-msg" id="email-settings-success">Salvo!</p>
+          </div>
+
+          <div class="settings-section" style="max-width: 720px;">
+            <h2>Listas de contatos</h2>
+            <p class="field__hint">Crie listas e importe contatos colando e-mails ou puxando de quem já respondeu seus formulários.</p>
+
+            <div class="settings-row" style="align-items: flex-end;">
+              <div class="field" style="flex: 2;">
+                <label class="field__label" for="email-list-select">Lista</label>
+                <select class="settings-select" id="email-list-select"></select>
+              </div>
+              <div class="field" style="flex: 0 0 auto;">
+                <button class="btn btn-ghost btn-small" id="btn-new-email-list" type="button">+ Nova lista</button>
+              </div>
+              <div class="field" style="flex: 0 0 auto;">
+                <button class="btn-delete" id="btn-delete-email-list" type="button">Excluir lista</button>
+              </div>
+            </div>
+
+            <div id="email-list-detail" class="hidden">
+              <p class="field__hint" id="email-list-count"></p>
+
+              <div class="toolbar" style="margin-bottom: 14px; flex-wrap: wrap;">
+                <button class="btn btn-ghost btn-small" type="button" data-import-form="vagas">Importar de Candidaturas</button>
+                <button class="btn btn-ghost btn-small" type="button" data-import-form="indicacao">Importar de Indicações</button>
+                <button class="btn btn-ghost btn-small" type="button" data-import-form="captacao">Importar de Captações</button>
+              </div>
+
+              <div class="field">
+                <label class="field__label" for="email-import-textarea">Importar colando (um contato por linha)</label>
+                <span class="field__hint">Formato: <code>nome,email</code> ou só <code>email</code> por linha.</span>
+                <textarea id="email-import-textarea" rows="4" placeholder="Maria Silva,maria@email.com&#10;joao@email.com"></textarea>
+                <button class="btn btn-ghost btn-small" id="btn-import-paste" type="button" style="margin-top: 8px;">Importar contatos colados</button>
+              </div>
+              <p class="error-msg" id="email-import-error"></p>
+              <p class="success-msg" id="email-import-success"></p>
+
+              <div class="table-wrap" style="margin-top: 16px;">
+                <table>
+                  <thead>
+                    <tr><th>Nome</th><th>E-mail</th><th>Status</th><th>Ações</th></tr>
+                  </thead>
+                  <tbody id="email-contacts-rows"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section" style="max-width: 720px;">
+            <h2>Criativos</h2>
+            <p class="field__hint">Monte o e-mail em blocos. Use <code>{{nome}}</code> em qualquer texto pra personalizar com o nome do contato.</p>
+
+            <div id="email-templates-list"></div>
+            <button class="btn-add-page" type="button" id="btn-new-template">+ Novo criativo</button>
+
+            <div id="email-template-editor" class="hidden" style="margin-top: 20px;">
+              <div class="field">
+                <label class="field__label" for="email-tpl-nome">Nome do criativo</label>
+                <input type="text" id="email-tpl-nome" placeholder="Ex.: Novidades de agosto" />
+              </div>
+
+              <div id="email-blocks-editor"></div>
+              <div class="toolbar" style="flex-wrap: wrap; margin: 10px 0 20px;">
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="heading">+ Título</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="text">+ Texto</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="image">+ Imagem</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="button">+ Botão</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="divider">+ Divisor</button>
+                <button class="btn btn-ghost btn-small" type="button" data-add-block="spacer">+ Espaço</button>
+              </div>
+
+              <div class="toolbar">
+                <button class="btn btn-primary btn-small" id="btn-save-template" type="button">Salvar criativo</button>
+                <button class="btn btn-ghost btn-small" id="btn-cancel-template" type="button">Cancelar</button>
+              </div>
+              <p class="error-msg" id="email-template-error"></p>
+
+              <h2 style="margin-top: 28px;">Pré-visualização</h2>
+              <div class="email-preview-wrap">
+                <iframe id="email-preview-frame" title="Pré-visualização do criativo"></iframe>
+              </div>
+            </div>
+          </div>
+
+          <div class="settings-section" style="max-width: 780px;">
+            <h2>Campanhas (disparos)</h2>
+            <p class="field__hint">Escolha um criativo e uma lista, e dispare — dá pra fechar a aba e continuar o envio depois.</p>
+
+            <div id="email-campaign-form">
+              <div class="settings-row">
+                <div class="field">
+                  <label class="field__label" for="email-camp-nome">Nome da campanha</label>
+                  <input type="text" id="email-camp-nome" placeholder="Ex.: Newsletter agosto" />
+                </div>
+                <div class="field">
+                  <label class="field__label" for="email-camp-assunto">Assunto do e-mail</label>
+                  <input type="text" id="email-camp-assunto" placeholder="Ex.: Novidades da Solua pra você" />
+                </div>
+              </div>
+              <div class="settings-row">
+                <div class="field">
+                  <label class="field__label" for="email-camp-template">Criativo</label>
+                  <select class="settings-select" id="email-camp-template"></select>
+                </div>
+                <div class="field">
+                  <label class="field__label" for="email-camp-list">Lista</label>
+                  <select class="settings-select" id="email-camp-list"></select>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-small" id="btn-create-campaign" type="button">Criar campanha</button>
+              <p class="error-msg" id="email-campaign-error"></p>
+            </div>
+
+            <div id="email-campaigns-list" style="margin-top: 20px;"></div>
+          </div>
+      </div>
+
+      <!-- ===================== ABA: CONVITE ===================== -->
+      <div class="tab-panel" id="tab-convite">
+        <div class="admin__header">
+          <h1 class="admin__title">Convite — confirmações (RSVP)</h1>
+          <div class="toolbar">
+            <span class="admin__count" id="count-convite"></span>
+            <button class="btn btn-ghost btn-small" id="btn-refresh-convite" type="button">Atualizar</button>
+            <button class="btn btn-primary btn-small" id="btn-csv-convite" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Empresa</th>
+                <th>Acompanhantes</th><th>Restrições</th><th>Extra</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rows-convite"></tbody>
+          </table>
+        </div>
+
+        <div class="settings-section" style="max-width: 780px; margin-top: 32px;">
+          <h2>Configuração do convite</h2>
+          <p class="field__hint">
+            Edite o JSON abaixo pra personalizar textos, cores, mídia e o comportamento do convite
+            em <a href="/convite" target="_blank" rel="noopener">/convite</a>. Use "Ver exemplo" pra
+            começar do zero, ou "Carregar atual" pra ver o que já está salvo.
+          </p>
+          <div class="toolbar" style="margin-bottom: 10px;">
+            <button class="btn btn-ghost btn-small" id="btn-convite-load" type="button">Carregar atual</button>
+            <button class="btn btn-ghost btn-small" id="btn-convite-example" type="button">Ver exemplo</button>
+          </div>
+          <textarea id="convite-config-json" rows="20" spellcheck="false" style="width:100%; font-family: ui-monospace, monospace; font-size: 0.82rem; border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px;"></textarea>
+          <button class="btn btn-primary" id="btn-convite-save" type="button" style="margin-top: 12px;">Salvar configuração</button>
+          <p class="error-msg" id="convite-config-error"></p>
+          <p class="success-msg" id="convite-config-success">Salvo!</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "solua_admin_token";
+    let currentRows = [];
+    let currentRowsIndicacoes = [];
+    let currentRowsCaptacoes = [];
+    let extraPagesDraft = [];
+
+    // Cada formulário tem sua própria config, tabela de respostas e página de pré-visualização.
+    const FORMS = {
+      vagas: { label: "Vagas", previewPath: "/", hasWhatsapp: true },
+      indicacao: { label: "Indicações", previewPath: "/indicacao", hasWhatsapp: false },
+      captacao: { label: "Captação", previewPath: "/captacao", hasWhatsapp: true },
+    };
+    let currentForm = "vagas";
+    const configDraft = { vagas: null, indicacao: null, captacao: null };
+
+    // Valores padrão exibidos enquanto nada foi salvo em Configurações ainda
+    // (mesmos valores hoje fixos em public/app.js).
+    const DEFAULT_CONFIG_VAGAS = {
+      footer: "",
+      capa: {
+        image: "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600",
+        position: "center",
+        gradient: true,
+      },
+      logo: {
+        image: "",
+        position: "top-left",
+        size: "medio",
+      },
+      landing: {
+        title: "Vagas para corretores (as)",
+        titleSize: "normal",
+        subtitle:
+          "Leva menos de 5 minutos. Conte um pouco sobre sua experiência e a forma como você atua " +
+          "no mercado imobiliário para darmos início à conversa.",
+        buttonLabel: "Iniciar",
+        textAlign: "left",
+        textPosition: "bottom",
+      },
+      thanks: {
+        title: "Recebemos sua candidatura!",
+        message:
+          "Obrigado por dedicar seu tempo. Nosso time vai analisar suas respostas e entrar em " +
+          "contato pelo WhatsApp informado em breve.",
+        textAlign: "center",
+        textPosition: "center",
+        whatsappNumber: "",
+        whatsappMessage: "Olá! Acabei de enviar minha candidatura pelo site da Solua.",
+      },
+      extraPages: [],
+    };
+
+    // Idem, mas para o formulário de Indicações (public/indicacao.js tem os mesmos valores).
+    const DEFAULT_CONFIG_INDICACAO = {
+      footer: "Solua Imobiliária — Imóveis • Consórcios • Seguros — 25 anos ao seu lado.",
+      capa: {
+        image: "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600",
+        position: "center",
+        gradient: true,
+      },
+      logo: {
+        image: "",
+        position: "top-left",
+        size: "medio",
+      },
+      landing: {
+        title: "Uma indicação pode virar comissão.",
+        titleSize: "normal",
+        subtitle:
+          "Conhece alguém que quer vender ou alugar um imóvel, contratar um seguro ou fazer um " +
+          "consórcio? Indique para a Solua. A gente cuida do atendimento e, se fechar negócio, sua " +
+          "indicação pode virar comissão.",
+        buttonLabel: "Quero fazer uma indicação",
+        textAlign: "left",
+        textPosition: "bottom",
+      },
+      thanks: {
+        title: "Indicação recebida. 💙",
+        message:
+          "Agora é com a Solua. Nossa equipe vai entrar em contato com a pessoa indicada e entender " +
+          "como podemos ajudar. Se fechar negócio, sua indicação pode virar comissão. Obrigado por " +
+          "indicar a Solua.",
+        textAlign: "center",
+        textPosition: "center",
+        whatsappNumber: "",
+        whatsappMessage: "",
+      },
+      extraPages: [],
+    };
+
+    // Idem, mas para o formulário de Captação de imóveis (public/captacao.js tem os mesmos valores).
+    const DEFAULT_CONFIG_CAPTACAO = {
+      footer: "Solua Imobiliária — Imóveis • Consórcios • Seguros — 25 anos ao seu lado.",
+      capa: {
+        image: "https://drive.google.com/thumbnail?id=1AQSDOAJ0f0w6NtLSyc3UzGU-DSGaUwpz&sz=w1600",
+        position: "center",
+        gradient: true,
+      },
+      logo: {
+        image: "",
+        position: "top-left",
+        size: "medio",
+      },
+      landing: {
+        title: "Seu imóvel, novos caminhos.",
+        titleSize: "normal",
+        subtitle:
+          "Quer vender ou alugar seu imóvel? Deixe seus dados e as informações básicas da " +
+          "propriedade. A equipe Solua vai entrar em contato para entender seu objetivo e " +
+          "apresentar as melhores possibilidades.",
+        buttonLabel: "Cadastrar meu imóvel",
+        textAlign: "left",
+        textPosition: "bottom",
+      },
+      thanks: {
+        title: "Recebemos os dados do seu imóvel!",
+        message:
+          "Nossa equipe vai analisar as informações e entrar em contato em breve para conversar " +
+          "sobre as melhores possibilidades para vender ou alugar seu imóvel.",
+        textAlign: "center",
+        textPosition: "center",
+        whatsappNumber: "",
+        whatsappMessage: "Olá! Acabei de cadastrar meu imóvel no site da Solua.",
+      },
+      extraPages: [],
+    };
+
+    const FORM_DEFAULTS = { vagas: DEFAULT_CONFIG_VAGAS, indicacao: DEFAULT_CONFIG_INDICACAO, captacao: DEFAULT_CONFIG_CAPTACAO };
+
+    const BUILTIN_STEPS_BY_FORM = {
+      vagas: [
+        "01 · Seus dados",
+        "02 · Dados profissionais",
+        "03 · Mercado de atuação",
+        "04 · Disponibilidade",
+        "05 · Expectativas",
+      ],
+      indicacao: [
+        "01 · O que você quer indicar?",
+        "02 · Quem você está indicando?",
+        "03 · Sobre a oportunidade",
+        "04 · Agora, sobre você",
+        "05 · Podemos entrar em contato?",
+      ],
+      captacao: [
+        "01 · Seus dados",
+        "02 · O que você deseja fazer com o imóvel?",
+        "03 · Onde fica o imóvel?",
+        "04 · Tipo de imóvel",
+        "05 · Valor e autorização",
+      ],
+    };
+
+    function fmtDate(iso) {
+      try {
+        return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+      } catch {
+        return iso;
+      }
+    }
+
+    function esc(value) {
+      const div = document.createElement("div");
+      div.textContent = value == null ? "" : String(value);
+      return div.innerHTML;
+    }
+
+    function fmtExtraRespostas(json) {
+      if (!json) return "";
+      try {
+        const obj = JSON.parse(json);
+        return Object.entries(obj)
+          .map(([label, valor]) => `${label}: ${valor}`)
+          .join("\n");
+      } catch {
+        return "";
+      }
+    }
+
+    function renderRows(rows) {
+      currentRows = rows;
+      document.getElementById("count").textContent = rows.length + " candidatura(s)";
+      document.getElementById("rows").innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${esc(fmtDate(r.criado_em))}</td>
+            <td>${esc(r.nome)}</td>
+            <td>${esc(r.email)}</td>
+            <td>${esc(r.whatsapp)}</td>
+            <td>${esc(r.cidade)}</td>
+            <td>${esc(r.creci)}</td>
+            <td>${esc(r.experiencia)}</td>
+            <td class="cell-wrap">${esc(r.captacao)}</td>
+            <td class="cell-wrap">${esc(r.regioes)}</td>
+            <td>${esc(r.tipos_imovel)}</td>
+            <td>${esc(r.disponibilidade)}</td>
+            <td>${esc(r.veiculo)}</td>
+            <td class="cell-wrap">${esc(r.portfolio)}</td>
+            <td class="cell-wrap">${esc(r.remuneracao)}</td>
+            <td class="cell-wrap">${esc(r.sobre_voce)}</td>
+            <td>${esc(r.lgpd)}</td>
+            <td class="cell-wrap">${esc(fmtExtraRespostas(r.extra_respostas))}</td>
+            <td><button class="btn-delete" type="button" data-delete-id="${esc(r.id)}">Excluir</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function loadData(token) {
+      const res = await fetch("/admin/data", { headers: { "x-admin-token": token }, cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar dados.");
+      }
+      const data = await res.json();
+      return data.rows || [];
+    }
+
+    async function deleteRow(id, btn) {
+      const nome = currentRows.find((r) => String(r.id) === String(id))?.nome || "essa candidatura";
+      if (!confirm(`Excluir "${nome}"? Essa ação não pode ser desfeita.`)) return;
+
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      btn.disabled = true;
+      btn.textContent = "Excluindo…";
+
+      try {
+        const res = await fetch(`/admin/data/${encodeURIComponent(id)}`, {
+          method: "DELETE",
+          headers: { "x-admin-token": token },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Não foi possível excluir.");
+        }
+        currentRows = currentRows.filter((r) => String(r.id) !== String(id));
+        renderRows(currentRows);
+      } catch (err) {
+        alert(err.message || "Erro ao excluir.");
+        btn.disabled = false;
+        btn.textContent = "Excluir";
+      }
+    }
+
+    function toCsv(rows) {
+      const headers = [
+        "criado_em", "nome", "email", "whatsapp", "cidade", "creci", "experiencia",
+        "captacao", "regioes", "tipos_imovel", "disponibilidade", "veiculo",
+        "portfolio", "remuneracao", "sobre_voce", "lgpd", "extra_respostas",
+      ];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    // ---------------------------------------------------------------
+    // Indicações (aba própria, mesma lógica da aba Candidaturas)
+    // ---------------------------------------------------------------
+
+    const TIPO_LABELS = {
+      imovel_venda: "Imóvel — venda",
+      imovel_locacao: "Imóvel — locação",
+      seguro: "Seguro",
+      consorcio: "Consórcio",
+    };
+
+    function fmtDetalhes(json) {
+      if (!json) return "";
+      try {
+        const obj = JSON.parse(json);
+        return Object.entries(obj)
+          .filter(([, v]) => v)
+          .map(([k, v]) => `${k}: ${v}`)
+          .join("\n");
+      } catch {
+        return "";
+      }
+    }
+
+    function renderRowsIndicacoes(rows) {
+      currentRowsIndicacoes = rows;
+      document.getElementById("count-indicacoes").textContent = rows.length + " indicação(ões)";
+      document.getElementById("rows-indicacoes").innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${esc(fmtDate(r.criado_em))}</td>
+            <td>${esc(TIPO_LABELS[r.tipo] || r.tipo)}</td>
+            <td>${esc(r.nome_indicado)}</td>
+            <td>${esc(r.whatsapp_indicado)}</td>
+            <td>${esc(r.email_indicado)}</td>
+            <td>${esc(r.como_conhece)}</td>
+            <td class="cell-wrap">${esc(fmtDetalhes(r.detalhes))}</td>
+            <td>${esc(r.nome_indicador)}</td>
+            <td>${esc(r.whatsapp_indicador)}</td>
+            <td>${esc(r.email_indicador)}</td>
+            <td>${esc(r.autoriza_contato)}</td>
+            <td class="cell-wrap">${esc(fmtExtraRespostas(r.extra_respostas))}</td>
+            <td><button class="btn-delete" type="button" data-delete-indicacao-id="${esc(r.id)}">Excluir</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function loadDataIndicacoes(token) {
+      const res = await fetch("/admin/data?form=indicacao", { headers: { "x-admin-token": token }, cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar indicações.");
+      }
+      const data = await res.json();
+      return data.rows || [];
+    }
+
+    async function deleteRowIndicacao(id, btn) {
+      const nome = currentRowsIndicacoes.find((r) => String(r.id) === String(id))?.nome_indicado || "essa indicação";
+      if (!confirm(`Excluir a indicação de "${nome}"? Essa ação não pode ser desfeita.`)) return;
+
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      btn.disabled = true;
+      btn.textContent = "Excluindo…";
+
+      try {
+        const res = await fetch(`/admin/data/${encodeURIComponent(id)}?form=indicacao`, {
+          method: "DELETE",
+          headers: { "x-admin-token": token },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Não foi possível excluir.");
+        }
+        currentRowsIndicacoes = currentRowsIndicacoes.filter((r) => String(r.id) !== String(id));
+        renderRowsIndicacoes(currentRowsIndicacoes);
+      } catch (err) {
+        alert(err.message || "Erro ao excluir.");
+        btn.disabled = false;
+        btn.textContent = "Excluir";
+      }
+    }
+
+    function toCsvIndicacoes(rows) {
+      const headers = [
+        "criado_em", "tipo", "nome_indicado", "whatsapp_indicado", "email_indicado", "como_conhece",
+        "detalhes", "nome_indicador", "whatsapp_indicador", "email_indicador", "autoriza_contato",
+        "confirma_permissao", "extra_respostas",
+      ];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    // ---------------------------------------------------------------
+    // Captações (aba própria, mesma lógica das abas Candidaturas/Indicações)
+    // ---------------------------------------------------------------
+
+    function renderRowsCaptacoes(rows) {
+      currentRowsCaptacoes = rows;
+      document.getElementById("count-captacoes").textContent = rows.length + " cadastro(s)";
+      document.getElementById("rows-captacoes").innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${esc(fmtDate(r.criado_em))}</td>
+            <td>${esc(r.nome)}</td>
+            <td>${esc(r.whatsapp)}</td>
+            <td>${esc(r.email)}</td>
+            <td>${esc(r.objetivo)}</td>
+            <td>${esc(r.cep)}</td>
+            <td class="cell-wrap">${esc(r.endereco)}</td>
+            <td>${esc(r.numero)}</td>
+            <td>${esc(r.complemento)}</td>
+            <td>${esc(r.bairro)}</td>
+            <td>${esc(r.cidade)}</td>
+            <td>${esc(r.tipo_imovel)}</td>
+            <td>${esc(r.valor_pretendido)}</td>
+            <td>${esc(r.lgpd)}</td>
+            <td class="cell-wrap">${esc(fmtExtraRespostas(r.extra_respostas))}</td>
+            <td><button class="btn-delete" type="button" data-delete-captacao-id="${esc(r.id)}">Excluir</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function loadDataCaptacoes(token) {
+      const res = await fetch("/admin/data?form=captacao", { headers: { "x-admin-token": token }, cache: "no-store" });
+      if (!res.ok) {
+        throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar cadastros.");
+      }
+      const data = await res.json();
+      return data.rows || [];
+    }
+
+    async function deleteRowCaptacao(id, btn) {
+      const nome = currentRowsCaptacoes.find((r) => String(r.id) === String(id))?.nome || "esse cadastro";
+      if (!confirm(`Excluir o cadastro de "${nome}"? Essa ação não pode ser desfeita.`)) return;
+
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      btn.disabled = true;
+      btn.textContent = "Excluindo…";
+
+      try {
+        const res = await fetch(`/admin/data/${encodeURIComponent(id)}?form=captacao`, {
+          method: "DELETE",
+          headers: { "x-admin-token": token },
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Não foi possível excluir.");
+        }
+        currentRowsCaptacoes = currentRowsCaptacoes.filter((r) => String(r.id) !== String(id));
+        renderRowsCaptacoes(currentRowsCaptacoes);
+      } catch (err) {
+        alert(err.message || "Erro ao excluir.");
+        btn.disabled = false;
+        btn.textContent = "Excluir";
+      }
+    }
+
+    function toCsvCaptacoes(rows) {
+      const headers = [
+        "criado_em", "nome", "whatsapp", "email", "objetivo", "cep", "endereco", "numero",
+        "complemento", "bairro", "cidade", "tipo_imovel", "valor_pretendido", "lgpd", "extra_respostas",
+      ];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    // ---------------------------------------------------------------
+    // Páginas (visão geral)
+    // ---------------------------------------------------------------
+
+    /** Redesenha a lista de páginas a partir de extraPagesDraft (fonte única de verdade). */
+    function renderPagesOverview() {
+      const fixedBefore = [
+        { name: "Tela inicial", tag: "abertura" },
+        ...BUILTIN_STEPS_BY_FORM[currentForm].map((name) => ({ name, tag: "fixa" })),
+      ];
+      const extras = extraPagesDraft.map((p, i) => ({
+        name: `${String(6 + i).padStart(2, "0")} · ${p.title || "Página extra"}`,
+        tag: "extra",
+        extraIndex: i,
+      }));
+      const fixedAfter = [{ name: "Agradecimento", tag: "final" }];
+      const all = [...fixedBefore, ...extras, ...fixedAfter];
+
+      document.getElementById("pages-overview").innerHTML = all
+        .map((it, i) => {
+          const draggable = it.extraIndex !== undefined;
+          return `<li class="${draggable ? "" : "is-fixed"}" ${draggable ? `data-extra-index="${it.extraIndex}"` : ""}>
+            <span class="drag-handle ${draggable ? "" : "drag-handle--disabled"}" title="${draggable ? "Arraste pra reordenar" : "Página fixa"}">⠿</span>
+            <span class="page-badge">${i + 1}</span>
+            <span class="page-name">${esc(it.name)}</span>
+            <span class="page-tag">${esc(it.tag)}</span>
+          </li>`;
+        })
+        .join("");
+    }
+
+    /** Arrastar (mouse/toque) pra reordenar as páginas extras na lista de visão geral. */
+    function initPagesDrag() {
+      const listEl = document.getElementById("pages-overview");
+      let draggedRef = null;
+
+      listEl.addEventListener("pointerdown", (e) => {
+        const handle = e.target.closest(".drag-handle:not(.drag-handle--disabled)");
+        if (!handle) return;
+        const li = handle.closest("li[data-extra-index]");
+        if (!li) return;
+
+        draggedRef = extraPagesDraft[Number(li.dataset.extraIndex)];
+        li.classList.add("is-dragging");
+        e.preventDefault();
+
+        const onMove = (ev) => {
+          if (!draggedRef) return;
+          const items = Array.from(listEl.querySelectorAll("li[data-extra-index]"));
+          const hovered = items.find((item) => {
+            const r = item.getBoundingClientRect();
+            return ev.clientY >= r.top && ev.clientY <= r.bottom;
+          });
+          if (!hovered) return;
+
+          const targetIdx = Number(hovered.dataset.extraIndex);
+          const currentIdx = extraPagesDraft.indexOf(draggedRef);
+          if (targetIdx !== currentIdx) {
+            extraPagesDraft.splice(currentIdx, 1);
+            extraPagesDraft.splice(targetIdx, 0, draggedRef);
+            renderPagesOverview();
+            const newIdx = extraPagesDraft.indexOf(draggedRef);
+            const newLi = listEl.querySelector(`li[data-extra-index="${newIdx}"]`);
+            if (newLi) newLi.classList.add("is-dragging");
+          }
+        };
+
+        const onUp = () => {
+          window.removeEventListener("pointermove", onMove);
+          window.removeEventListener("pointerup", onUp);
+          listEl.querySelectorAll(".is-dragging").forEach((el) => el.classList.remove("is-dragging"));
+          draggedRef = null;
+          renderExtraPagesEditor(); // mantém a aba Configurações sincronizada
+        };
+
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+      });
+    }
+
+    // ---------------------------------------------------------------
+    // Configurações — páginas extras (multi-página, reordenável)
+    // ---------------------------------------------------------------
+
+    const QUESTION_TYPES_WITH_OPTIONS = ["escolha", "checkbox"];
+
+    function questionRowHtml(pi, qi, q, isFirst, isLast) {
+      return `
+        <div class="extra-q" data-page-index="${pi}" data-q-index="${qi}">
+          <div class="extra-q__row">
+            <div class="extra-q__move">
+              <button type="button" class="btn-icon q-move-up" ${isFirst ? "disabled" : ""} title="Mover pra cima">↑</button>
+              <button type="button" class="btn-icon q-move-down" ${isLast ? "disabled" : ""} title="Mover pra baixo">↓</button>
+            </div>
+            <input type="text" class="extra-q-label" placeholder="Pergunta" value="${esc(q.label)}" />
+            <select class="extra-q-type settings-select">
+              <option value="texto" ${q.type === "texto" ? "selected" : ""}>Texto curto (escrever)</option>
+              <option value="textarea" ${q.type === "textarea" ? "selected" : ""}>Texto longo (escrever)</option>
+              <option value="escolha" ${q.type === "escolha" ? "selected" : ""}>Múltipla escolha — uma opção (botão)</option>
+              <option value="checkbox" ${q.type === "checkbox" ? "selected" : ""}>Múltipla escolha — várias opções (botão)</option>
+              <option value="simnao" ${q.type === "simnao" ? "selected" : ""}>Sim ou não (botão)</option>
+            </select>
+            <label class="extra-q__required">
+              <input type="checkbox" class="extra-q-required" ${q.required ? "checked" : ""} /> Obrigatória
+            </label>
+            <button type="button" class="btn-delete extra-q-remove">Remover</button>
+          </div>
+          <textarea
+            class="extra-q-options"
+            placeholder="Uma opção por linha"
+            style="${QUESTION_TYPES_WITH_OPTIONS.includes(q.type) ? "" : "display:none;"}"
+          >${esc((q.options || []).join("\n"))}</textarea>
+        </div>`;
+    }
+
+    function pageHtml(pi, page, isFirst, isLast) {
+      const questions = page.questions || [];
+      return `
+        <div class="extra-page" data-page-index="${pi}">
+          <div class="extra-page__header">
+            <div class="extra-page__move">
+              <button type="button" class="btn-icon page-move-up" ${isFirst ? "disabled" : ""} title="Mover página pra cima">↑</button>
+              <button type="button" class="btn-icon page-move-down" ${isLast ? "disabled" : ""} title="Mover página pra baixo">↓</button>
+            </div>
+            <input type="text" class="extra-page-title" placeholder="Título da página" value="${esc(page.title)}" />
+            <button type="button" class="btn-delete page-remove">Remover página</button>
+          </div>
+          <div class="extra-page__questions">
+            ${
+              questions.length
+                ? questions.map((q, qi) => questionRowHtml(pi, qi, q, qi === 0, qi === questions.length - 1)).join("")
+                : '<p class="field__hint">Nenhuma pergunta nessa página ainda.</p>'
+            }
+          </div>
+          <button type="button" class="btn-add-question" data-add-question-to="${pi}">+ Adicionar pergunta nesta página</button>
+        </div>`;
+    }
+
+    function renderExtraPagesEditor() {
+      const container = document.getElementById("extra-pages-editor");
+      if (!extraPagesDraft.length) {
+        container.innerHTML = '<p class="field__hint">Nenhuma página extra ainda.</p>';
+        return;
+      }
+      container.innerHTML = extraPagesDraft
+        .map((page, pi) => pageHtml(pi, page, pi === 0, pi === extraPagesDraft.length - 1))
+        .join("");
+    }
+
+    /** Lê os campos atualmente na tela e grava de volta em extraPagesDraft. */
+    function syncExtraPagesFromDom() {
+      document.querySelectorAll(".extra-page").forEach((pageEl) => {
+        const pi = Number(pageEl.dataset.pageIndex);
+        const page = extraPagesDraft[pi];
+        if (!page) return;
+        page.title = pageEl.querySelector(".extra-page-title").value;
+
+        pageEl.querySelectorAll(".extra-q").forEach((qEl) => {
+          const qi = Number(qEl.dataset.qIndex);
+          const q = page.questions[qi];
+          if (!q) return;
+          q.label = qEl.querySelector(".extra-q-label").value;
+          q.type = qEl.querySelector(".extra-q-type").value;
+          q.required = qEl.querySelector(".extra-q-required").checked;
+          q.options = qEl
+            .querySelector(".extra-q-options")
+            .value.split("\n")
+            .map((s) => s.trim())
+            .filter(Boolean);
+        });
+      });
+    }
+
+    function addPage() {
+      syncExtraPagesFromDom();
+      extraPagesDraft.push({ title: `Página extra ${extraPagesDraft.length + 1}`, questions: [] });
+      renderExtraPagesEditor();
+      renderPagesOverview();
+    }
+
+    function swapItems(arr, i, j) {
+      const tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
+    }
+
+    /** Preenche buracos de uma config salva antes desta versão. */
+    function fillConfigDefaults(saved, formKey) {
+      const defaults = FORM_DEFAULTS[formKey] || DEFAULT_CONFIG_VAGAS;
+      const s = saved || {};
+      let extraPages = [];
+      if (Array.isArray(s.extraPages)) {
+        extraPages = s.extraPages;
+      } else if (Array.isArray(s.extraQuestions) && s.extraQuestions.length) {
+        extraPages = [{ title: "Perguntas extras", questions: s.extraQuestions }];
+      }
+      return {
+        footer: typeof s.footer === "string" ? s.footer : defaults.footer,
+        capa: { ...defaults.capa, ...(s.capa || {}) },
+        logo: { ...defaults.logo, ...(s.logo || {}) },
+        landing: { ...defaults.landing, ...(s.landing || {}) },
+        thanks: { ...defaults.thanks, ...(s.thanks || {}) },
+        extraPages,
+      };
+    }
+
+    function updateConfigVisibilityForForm() {
+      document.getElementById("cfg-whatsapp-fields").classList.toggle("hidden", !FORMS[currentForm].hasWhatsapp);
+    }
+
+    function applyConfigToForm(cfg) {
+      document.getElementById("cfg-footer").value = cfg.footer || "";
+      setImagePreview(document.getElementById("cfg-capa-preview"), cfg.capa.image || "");
+      document.getElementById("cfg-capa-status").textContent = "";
+      document.getElementById("cfg-capa-position").value = cfg.capa.position || "center";
+      document.getElementById("cfg-capa-gradient").checked = cfg.capa.gradient !== false;
+      setImagePreview(document.getElementById("cfg-logo-preview"), cfg.logo.image || "");
+      document.getElementById("cfg-logo-status").textContent = "";
+      document.getElementById("cfg-logo-position").value = cfg.logo.position || "top-left";
+      document.getElementById("cfg-logo-size").value = cfg.logo.size || "medio";
+      document.getElementById("cfg-landing-title").value = cfg.landing.title || "";
+      document.getElementById("cfg-landing-title-size").value = cfg.landing.titleSize || "normal";
+      document.getElementById("cfg-landing-subtitle").value = cfg.landing.subtitle || "";
+      document.getElementById("cfg-landing-button").value = cfg.landing.buttonLabel || "";
+      document.getElementById("cfg-landing-align").value = cfg.landing.textAlign || "left";
+      document.getElementById("cfg-landing-pos").value = cfg.landing.textPosition || "bottom";
+      document.getElementById("cfg-thanks-title").value = cfg.thanks.title || "";
+      document.getElementById("cfg-thanks-message").value = cfg.thanks.message || "";
+      document.getElementById("cfg-thanks-align").value = cfg.thanks.textAlign || "center";
+      document.getElementById("cfg-thanks-pos").value = cfg.thanks.textPosition || "center";
+      document.getElementById("cfg-thanks-whats-number").value = cfg.thanks.whatsappNumber || "";
+      document.getElementById("cfg-thanks-whats-message").value = cfg.thanks.whatsappMessage || "";
+      extraPagesDraft = (cfg.extraPages || []).map((p) => ({
+        title: p.title || "",
+        questions: (p.questions || []).map((q) => ({ ...q })),
+      }));
+      renderExtraPagesEditor();
+      renderPagesOverview();
+    }
+
+    /** Busca a config salva dos dois formulários e guarda em configDraft. */
+    async function loadAllConfigs() {
+      await Promise.all(
+        Object.keys(FORMS).map(async (formKey) => {
+          try {
+            const res = await fetch(`/api/config?form=${formKey}`, { cache: "no-store" });
+            const data = await res.json();
+            configDraft[formKey] = fillConfigDefaults(data.config, formKey);
+          } catch {
+            configDraft[formKey] = { ...FORM_DEFAULTS[formKey] };
+          }
+        })
+      );
+    }
+
+    function collectConfigFromForm() {
+      syncExtraPagesFromDom();
+
+      return {
+        footer: document.getElementById("cfg-footer").value.trim(),
+        capa: {
+          image: document.getElementById("cfg-capa-preview").getAttribute("src") || "",
+          position: document.getElementById("cfg-capa-position").value,
+          gradient: document.getElementById("cfg-capa-gradient").checked,
+        },
+        logo: {
+          image: document.getElementById("cfg-logo-preview").getAttribute("src") || "",
+          position: document.getElementById("cfg-logo-position").value,
+          size: document.getElementById("cfg-logo-size").value,
+        },
+        landing: {
+          title: document.getElementById("cfg-landing-title").value.trim(),
+          titleSize: document.getElementById("cfg-landing-title-size").value,
+          subtitle: document.getElementById("cfg-landing-subtitle").value.trim(),
+          buttonLabel: document.getElementById("cfg-landing-button").value.trim(),
+          textAlign: document.getElementById("cfg-landing-align").value,
+          textPosition: document.getElementById("cfg-landing-pos").value,
+        },
+        thanks: {
+          title: document.getElementById("cfg-thanks-title").value.trim(),
+          message: document.getElementById("cfg-thanks-message").value.trim(),
+          textAlign: document.getElementById("cfg-thanks-align").value,
+          textPosition: document.getElementById("cfg-thanks-pos").value,
+          whatsappNumber: document.getElementById("cfg-thanks-whats-number").value.trim(),
+          whatsappMessage: document.getElementById("cfg-thanks-whats-message").value.trim(),
+        },
+        extraPages: extraPagesDraft,
+      };
+    }
+
+    async function saveConfig(ids) {
+      const btn = document.getElementById((ids && ids.btn) || "btn-save-config");
+      const errorEl = document.getElementById((ids && ids.error) || "config-error");
+      const successEl = document.getElementById((ids && ids.success) || "config-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      const payload = collectConfigFromForm();
+      const originalLabel = btn.textContent;
+
+      btn.disabled = true;
+      btn.textContent = "Salvando…";
+
+      try {
+        const res = await fetch(`/admin/config?form=${currentForm}`, {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-admin-token": token },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Não foi possível salvar.");
+        }
+        configDraft[currentForm] = data.config;
+        applyConfigToForm(data.config);
+        successEl.classList.add("is-visible");
+        refreshPreview();
+      } catch (err) {
+        errorEl.textContent = err.message || "Erro ao salvar.";
+        errorEl.classList.add("is-visible");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+      }
+    }
+
+    // ---------------------------------------------------------------
+    // Visualizar
+    // ---------------------------------------------------------------
+
+    function refreshPreview() {
+      const frame = document.getElementById("preview-frame");
+      document.getElementById("btn-preview-newtab").href = FORMS[currentForm].previewPath;
+      frame.src = FORMS[currentForm].previewPath + "?admin-preview=" + Date.now();
+    }
+
+    // ---------------------------------------------------------------
+    // Alternador de formulário (Vagas / Indicações), compartilhado pelas
+    // abas Páginas, Configurações e Visualizar.
+    // ---------------------------------------------------------------
+
+    function setCurrentForm(formKey) {
+      if (!FORMS[formKey] || formKey === currentForm) return;
+
+      // guarda o que estiver na tela agora antes de trocar (evita perder edição não salva)
+      configDraft[currentForm] = collectConfigFromForm();
+
+      currentForm = formKey;
+      document.querySelectorAll(".form-switch__btn").forEach((b) => {
+        b.classList.toggle("is-active", b.dataset.form === currentForm);
+      });
+
+      applyConfigToForm(configDraft[currentForm] || FORM_DEFAULTS[currentForm]);
+      updateConfigVisibilityForForm();
+      refreshPreview();
+    }
+
+    document.querySelectorAll(".form-switch__btn").forEach((btn) => {
+      btn.addEventListener("click", () => setCurrentForm(btn.dataset.form));
+    });
+
+    // ---------------------------------------------------------------
+    // Login / navegação
+    // ---------------------------------------------------------------
+
+    async function tryEnter(token) {
+      const errorEl = document.getElementById("gate-error");
+      errorEl.classList.remove("is-visible");
+      try {
+        const [rows, rowsIndicacoes, rowsCaptacoes] = await Promise.all([
+          loadData(token),
+          loadDataIndicacoes(token),
+          loadDataCaptacoes(token),
+        ]);
+        sessionStorage.setItem(STORAGE_KEY, token);
+        document.getElementById("gate").classList.add("hidden");
+        document.getElementById("content").classList.remove("hidden");
+        renderRows(rows);
+        renderRowsIndicacoes(rowsIndicacoes);
+        renderRowsCaptacoes(rowsCaptacoes);
+        await loadAllConfigs();
+        applyConfigToForm(configDraft[currentForm]);
+        updateConfigVisibilityForForm();
+        refreshPreview();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    document.getElementById("btn-enter").addEventListener("click", () => {
+      const token = document.getElementById("token-input").value.trim();
+      if (token) tryEnter(token);
+    });
+
+    document.getElementById("token-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") document.getElementById("btn-enter").click();
+    });
+
+    document.getElementById("btn-refresh").addEventListener("click", async () => {
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      if (token) renderRows(await loadData(token));
+    });
+
+    document.getElementById("rows").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-delete-id]");
+      if (btn) deleteRow(btn.dataset.deleteId, btn);
+    });
+
+    document.getElementById("btn-csv").addEventListener("click", () => {
+      const blob = new Blob([toCsv(currentRows)], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "candidaturas-solua.csv";
+      link.click();
+    });
+
+    document.getElementById("btn-refresh-indicacoes").addEventListener("click", async () => {
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      if (token) renderRowsIndicacoes(await loadDataIndicacoes(token));
+    });
+
+    document.getElementById("rows-indicacoes").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-delete-indicacao-id]");
+      if (btn) deleteRowIndicacao(btn.dataset.deleteIndicacaoId, btn);
+    });
+
+    document.getElementById("btn-csv-indicacoes").addEventListener("click", () => {
+      const blob = new Blob([toCsvIndicacoes(currentRowsIndicacoes)], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "indicacoes-solua.csv";
+      link.click();
+    });
+
+    document.getElementById("btn-refresh-captacoes").addEventListener("click", async () => {
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      if (token) renderRowsCaptacoes(await loadDataCaptacoes(token));
+    });
+
+    document.getElementById("rows-captacoes").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-delete-captacao-id]");
+      if (btn) deleteRowCaptacao(btn.dataset.deleteCaptacaoId, btn);
+    });
+
+    document.getElementById("btn-csv-captacoes").addEventListener("click", () => {
+      const blob = new Blob([toCsvCaptacoes(currentRowsCaptacoes)], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "captacoes-solua.csv";
+      link.click();
+    });
+
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("is-active", b === btn));
+        document.querySelectorAll(".tab-panel").forEach((p) => {
+          p.classList.toggle("is-active", p.id === "tab-" + btn.dataset.tab);
+        });
+        if (btn.dataset.tab === "preview") refreshPreview();
+        if (btn.dataset.tab === "email") initEmailMarketing();
+        if (btn.dataset.tab === "convite") initConvite();
+      });
+    });
+
+    document.getElementById("btn-preview-refresh").addEventListener("click", refreshPreview);
+
+    document.getElementById("btn-preview-skip").addEventListener("click", () => {
+      document.getElementById("preview-frame").src = FORMS[currentForm].previewPath + "?preview_skip=1&t=" + Date.now();
+    });
+
+    document.getElementById("btn-add-page").addEventListener("click", addPage);
+
+    document.getElementById("btn-save-config").addEventListener("click", () => saveConfig());
+
+    document.getElementById("btn-save-pages-order").addEventListener("click", () =>
+      saveConfig({ btn: "btn-save-pages-order", error: "pages-error", success: "pages-success" })
+    );
+
+    // ---------------------------------------------------------------
+    // Upload de imagens (capa e logo)
+    // ---------------------------------------------------------------
+
+    function setImagePreview(imgEl, value) {
+      if (value) {
+        imgEl.src = value;
+        imgEl.classList.remove("is-empty");
+      } else {
+        imgEl.removeAttribute("src");
+        imgEl.classList.add("is-empty");
+      }
+    }
+
+    function resizeImageFile(file, { maxDim, mime, quality }) {
+      return new Promise((resolve, reject) => {
+        if (!file.type || !file.type.startsWith("image/")) {
+          reject(new Error("Escolha um arquivo de imagem."));
+          return;
+        }
+        const reader = new FileReader();
+        reader.onerror = () => reject(new Error("Não foi possível ler o arquivo."));
+        reader.onload = () => {
+          const img = new Image();
+          img.onerror = () => reject(new Error("Arquivo de imagem inválido."));
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width >= height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement("canvas");
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL(mime, quality));
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function handleImageUpload(file, opts, previewEl, statusEl) {
+      statusEl.textContent = "Processando imagem…";
+      statusEl.classList.remove("is-error");
+      try {
+        const mime = file.type === "image/png" || file.type === "image/webp" ? "image/png" : "image/jpeg";
+        const dataUrl = await resizeImageFile(file, { maxDim: opts.maxDim, mime, quality: opts.quality });
+        if (dataUrl.length > opts.maxChars) {
+          throw new Error(
+            `Imagem ainda ficou grande (${Math.round(dataUrl.length / 1024)} KB) mesmo compactada. ` +
+              "Tente uma imagem mais simples ou já reduzida."
+          );
+        }
+        setImagePreview(previewEl, dataUrl);
+        statusEl.textContent = `Pronto (${Math.round(dataUrl.length / 1024)} KB).`;
+      } catch (err) {
+        statusEl.textContent = err.message || "Erro ao processar a imagem.";
+        statusEl.classList.add("is-error");
+      }
+    }
+
+    document.getElementById("cfg-capa-file").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      handleImageUpload(
+        file,
+        { maxDim: 1600, maxChars: 900000, quality: 0.78 },
+        document.getElementById("cfg-capa-preview"),
+        document.getElementById("cfg-capa-status")
+      );
+    });
+
+    document.getElementById("cfg-logo-file").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      e.target.value = "";
+      if (!file) return;
+      handleImageUpload(
+        file,
+        { maxDim: 400, maxChars: 350000, quality: 0.9 },
+        document.getElementById("cfg-logo-preview"),
+        document.getElementById("cfg-logo-status")
+      );
+    });
+
+    document.getElementById("cfg-capa-remove").addEventListener("click", () => {
+      setImagePreview(document.getElementById("cfg-capa-preview"), "");
+      document.getElementById("cfg-capa-status").textContent = "";
+    });
+
+    document.getElementById("cfg-logo-remove").addEventListener("click", () => {
+      setImagePreview(document.getElementById("cfg-logo-preview"), "");
+      document.getElementById("cfg-logo-status").textContent = "";
+    });
+
+    initPagesDrag();
+
+    document.getElementById("extra-pages-editor").addEventListener("click", (e) => {
+      const addQBtn = e.target.closest("[data-add-question-to]");
+      if (addQBtn) {
+        syncExtraPagesFromDom();
+        const pi = Number(addQBtn.dataset.addQuestionTo);
+        extraPagesDraft[pi].questions.push({ label: "", type: "texto", options: [], required: false });
+        renderExtraPagesEditor();
+        return;
+      }
+
+      const pageRemoveBtn = e.target.closest(".page-remove");
+      if (pageRemoveBtn) {
+        syncExtraPagesFromDom();
+        const pi = Number(pageRemoveBtn.closest(".extra-page").dataset.pageIndex);
+        extraPagesDraft.splice(pi, 1);
+        renderExtraPagesEditor();
+        renderPagesOverview();
+        return;
+      }
+
+      const pageUpBtn = e.target.closest(".page-move-up");
+      if (pageUpBtn) {
+        syncExtraPagesFromDom();
+        const pi = Number(pageUpBtn.closest(".extra-page").dataset.pageIndex);
+        if (pi > 0) swapItems(extraPagesDraft, pi, pi - 1);
+        renderExtraPagesEditor();
+        renderPagesOverview();
+        return;
+      }
+
+      const pageDownBtn = e.target.closest(".page-move-down");
+      if (pageDownBtn) {
+        syncExtraPagesFromDom();
+        const pi = Number(pageDownBtn.closest(".extra-page").dataset.pageIndex);
+        if (pi < extraPagesDraft.length - 1) swapItems(extraPagesDraft, pi, pi + 1);
+        renderExtraPagesEditor();
+        renderPagesOverview();
+        return;
+      }
+
+      const qRemoveBtn = e.target.closest(".extra-q-remove");
+      if (qRemoveBtn) {
+        syncExtraPagesFromDom();
+        const qEl = qRemoveBtn.closest(".extra-q");
+        const pi = Number(qEl.dataset.pageIndex);
+        const qi = Number(qEl.dataset.qIndex);
+        extraPagesDraft[pi].questions.splice(qi, 1);
+        renderExtraPagesEditor();
+        return;
+      }
+
+      const qUpBtn = e.target.closest(".q-move-up");
+      if (qUpBtn) {
+        syncExtraPagesFromDom();
+        const qEl = qUpBtn.closest(".extra-q");
+        const pi = Number(qEl.dataset.pageIndex);
+        const qi = Number(qEl.dataset.qIndex);
+        if (qi > 0) swapItems(extraPagesDraft[pi].questions, qi, qi - 1);
+        renderExtraPagesEditor();
+        return;
+      }
+
+      const qDownBtn = e.target.closest(".q-move-down");
+      if (qDownBtn) {
+        syncExtraPagesFromDom();
+        const qEl = qDownBtn.closest(".extra-q");
+        const pi = Number(qEl.dataset.pageIndex);
+        const qi = Number(qEl.dataset.qIndex);
+        const questions = extraPagesDraft[pi].questions;
+        if (qi < questions.length - 1) swapItems(questions, qi, qi + 1);
+        renderExtraPagesEditor();
+      }
+    });
+
+    document.getElementById("extra-pages-editor").addEventListener("change", (e) => {
+      if (e.target.classList.contains("extra-q-type")) {
+        const optionsEl = e.target.closest(".extra-q").querySelector(".extra-q-options");
+        optionsEl.style.display = QUESTION_TYPES_WITH_OPTIONS.includes(e.target.value) ? "" : "none";
+      }
+    });
+
+    // reflete o título da página na aba Páginas em tempo real, sem perder o foco do campo
+    document.getElementById("extra-pages-editor").addEventListener("input", (e) => {
+      if (!e.target.classList.contains("extra-page-title")) return;
+      const pi = Number(e.target.closest(".extra-page").dataset.pageIndex);
+      if (extraPagesDraft[pi]) {
+        extraPagesDraft[pi].title = e.target.value;
+        renderPagesOverview();
+      }
+    });
+
+    // ---------------------------------------------------------------
+    // Email marketing
+    // ---------------------------------------------------------------
+
+    let emailDataLoaded = false;
+    let emailSettings = null;
+    let emailLists = [];
+    let currentEmailListId = null;
+    let emailContacts = [];
+    let emailTemplates = [];
+    let emailTemplateDraft = null; // { id: null|number, nome, blocks: [] }
+    let emailCampaigns = [];
+
+    function authHeaders() {
+      return { "x-admin-token": sessionStorage.getItem(STORAGE_KEY) };
+    }
+
+    async function apiGet(path) {
+      const res = await fetch(path, { headers: authHeaders(), cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Erro ao carregar.");
+      return data;
+    }
+
+    async function apiPost(path, body) {
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...authHeaders() },
+        body: JSON.stringify(body || {}),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Erro ao salvar.");
+      return data;
+    }
+
+    async function apiDelete(path) {
+      const res = await fetch(path, { method: "DELETE", headers: authHeaders() });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "Erro ao excluir.");
+      return data;
+    }
+
+    async function initEmailMarketing() {
+      if (emailDataLoaded) return;
+      emailDataLoaded = true;
+      try {
+        await Promise.all([loadEmailSettingsIntoForm(), loadEmailLists(), loadEmailTemplates(), loadEmailCampaigns()]);
+      } catch (err) {
+        emailDataLoaded = false; // deixa tentar de novo se falhar (ex.: banco fora do ar)
+        alert(err.message || "Erro ao carregar Email Marketing.");
+      }
+    }
+
+    // ---- Provedor de e-mail ----
+
+    async function loadEmailSettingsIntoForm() {
+      const data = await apiGet("/admin/email/settings");
+      emailSettings = data.settings;
+      document.getElementById("email-cfg-fromname").value = (emailSettings && emailSettings.fromName) || "";
+      document.getElementById("email-cfg-fromemail").value = (emailSettings && emailSettings.fromEmail) || "";
+      document.getElementById("email-cfg-replyto").value = (emailSettings && emailSettings.replyTo) || "";
+      document.getElementById("email-cfg-apikey").value = "";
+      document.getElementById("email-cfg-apikey").placeholder =
+        emailSettings && emailSettings.apiKeySet ? "•••••••••••••••••••• (já configurada)" : "re_xxxxxxxxxxxxxxxxxxxxxxxx";
+    }
+
+    async function saveEmailSettings() {
+      const btn = document.getElementById("btn-save-email-settings");
+      const errorEl = document.getElementById("email-settings-error");
+      const successEl = document.getElementById("email-settings-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Salvando…";
+      try {
+        const data = await apiPost("/admin/email/settings", {
+          apiKey: document.getElementById("email-cfg-apikey").value,
+          fromName: document.getElementById("email-cfg-fromname").value,
+          fromEmail: document.getElementById("email-cfg-fromemail").value,
+          replyTo: document.getElementById("email-cfg-replyto").value,
+        });
+        emailSettings = data.settings;
+        document.getElementById("email-cfg-apikey").value = "";
+        document.getElementById("email-cfg-apikey").placeholder = emailSettings.apiKeySet
+          ? "•••••••••••••••••••• (já configurada)"
+          : "re_xxxxxxxxxxxxxxxxxxxxxxxx";
+        successEl.classList.add("is-visible");
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    // ---- Listas e contatos ----
+
+    function renderEmailListSelect() {
+      const sel = document.getElementById("email-list-select");
+      sel.innerHTML = emailLists.length
+        ? emailLists.map((l) => `<option value="${l.id}">${esc(l.nome)} (${l.total_contatos})</option>`).join("")
+        : '<option value="">Nenhuma lista ainda</option>';
+      if (emailLists.length) {
+        if (!currentEmailListId || !emailLists.find((l) => l.id === currentEmailListId)) {
+          currentEmailListId = emailLists[0].id;
+        }
+        sel.value = currentEmailListId;
+      } else {
+        currentEmailListId = null;
+      }
+      document.getElementById("email-list-detail").classList.toggle("hidden", !currentEmailListId);
+    }
+
+    async function loadEmailLists() {
+      const data = await apiGet("/admin/email/lists");
+      emailLists = data.lists;
+      renderEmailListSelect();
+      renderEmailCampaignListSelect();
+      if (currentEmailListId) await loadContactsForCurrentList();
+    }
+
+    async function loadContactsForCurrentList() {
+      if (!currentEmailListId) {
+        emailContacts = [];
+        renderContactsTable();
+        return;
+      }
+      const data = await apiGet(`/admin/email/lists/${currentEmailListId}/contacts`);
+      emailContacts = data.contacts;
+      renderContactsTable();
+    }
+
+    function renderContactsTable() {
+      document.getElementById("email-list-count").textContent =
+        emailContacts.length + " contato(s) — " + emailContacts.filter((c) => !c.opt_out).length + " ativo(s)";
+      document.getElementById("email-contacts-rows").innerHTML = emailContacts
+        .map(
+          (c) => `<tr>
+            <td>${esc(c.nome || "")}</td>
+            <td>${esc(c.email)}</td>
+            <td>${c.opt_out ? '<span class="status-badge rascunho">Descadastrado</span>' : '<span class="status-badge concluida">Ativo</span>'}</td>
+            <td><button class="btn-delete" type="button" data-remove-contact="${c.id}">Remover</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function createEmailList() {
+      const nome = prompt("Nome da nova lista:");
+      if (!nome || !nome.trim()) return;
+      try {
+        const data = await apiPost("/admin/email/lists", { nome: nome.trim() });
+        currentEmailListId = data.list.id;
+        await loadEmailLists();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function deleteCurrentEmailList() {
+      if (!currentEmailListId) return;
+      const list = emailLists.find((l) => l.id === currentEmailListId);
+      if (!confirm(`Excluir a lista "${list ? list.nome : ""}" e todos os contatos dela? Essa ação não pode ser desfeita.`)) return;
+      try {
+        await apiDelete(`/admin/email/lists/${currentEmailListId}`);
+        currentEmailListId = null;
+        await loadEmailLists();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    function parsePastedContacts(text) {
+      return text
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const parts = line.split(",");
+          if (parts.length >= 2) return { nome: parts[0].trim(), email: parts.slice(1).join(",").trim() };
+          return { nome: "", email: parts[0].trim() };
+        });
+    }
+
+    async function importPastedContacts() {
+      const errorEl = document.getElementById("email-import-error");
+      const successEl = document.getElementById("email-import-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+      if (!currentEmailListId) return;
+      const contacts = parsePastedContacts(document.getElementById("email-import-textarea").value);
+      if (!contacts.length) return;
+      try {
+        const data = await apiPost(`/admin/email/lists/${currentEmailListId}/contacts`, { contacts });
+        successEl.textContent = `${data.imported} contato(s) importado(s)${data.skipped ? `, ${data.skipped} ignorado(s)` : ""}.`;
+        successEl.classList.add("is-visible");
+        document.getElementById("email-import-textarea").value = "";
+        await loadEmailLists();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function importFromForm(formKey) {
+      if (!currentEmailListId) return;
+      const errorEl = document.getElementById("email-import-error");
+      const successEl = document.getElementById("email-import-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+      try {
+        const data = await apiPost(`/admin/email/lists/${currentEmailListId}/import`, { form: formKey });
+        successEl.textContent = `${data.imported} contato(s) importado(s)${data.skipped ? `, ${data.skipped} ignorado(s)` : ""}.`;
+        successEl.classList.add("is-visible");
+        await loadEmailLists();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function removeContact(id) {
+      try {
+        await apiDelete(`/admin/email/contacts/${id}`);
+        await loadEmailLists();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ---- Criativos ----
+
+    function emptyBlockFor(type) {
+      if (type === "heading") return { type, text: "" };
+      if (type === "text") return { type, text: "" };
+      if (type === "image") return { type, src: "", link: "" };
+      if (type === "button") return { type, label: "Saiba mais", url: "", align: "left" };
+      if (type === "spacer") return { type, height: 24 };
+      return { type: "divider" };
+    }
+
+    async function loadEmailTemplates() {
+      const data = await apiGet("/admin/email/templates");
+      emailTemplates = data.templates;
+      renderTemplatesList();
+      renderEmailCampaignTemplateSelect();
+    }
+
+    function renderTemplatesList() {
+      const el = document.getElementById("email-templates-list");
+      el.innerHTML = emailTemplates.length
+        ? emailTemplates
+            .map(
+              (t) => `<div class="email-item-row">
+                <div class="email-item-row__main">
+                  <div class="email-item-row__title">${esc(t.nome)}</div>
+                  <div class="email-item-row__meta">${t.blocks.length} bloco(s)</div>
+                </div>
+                <div class="email-item-row__actions">
+                  <button class="btn btn-ghost btn-small" type="button" data-edit-template="${t.id}">Editar</button>
+                  <button class="btn-delete" type="button" data-delete-template="${t.id}">Excluir</button>
+                </div>
+              </div>`
+            )
+            .join("")
+        : '<p class="field__hint">Nenhum criativo ainda.</p>';
+    }
+
+    function openTemplateEditor(template) {
+      emailTemplateDraft = template
+        ? { id: template.id, nome: template.nome, blocks: template.blocks.map((b) => ({ ...b })) }
+        : { id: null, nome: "", blocks: [] };
+      document.getElementById("email-tpl-nome").value = emailTemplateDraft.nome;
+      document.getElementById("email-template-editor").classList.remove("hidden");
+      document.getElementById("email-template-error").classList.remove("is-visible");
+      renderBlocksEditor();
+      updateEmailPreview();
+    }
+
+    function closeTemplateEditor() {
+      emailTemplateDraft = null;
+      document.getElementById("email-template-editor").classList.add("hidden");
+    }
+
+    function blockEditorFieldsHtml(block) {
+      if (block.type === "heading" || block.type === "text") {
+        return `<textarea class="eb-text" rows="${block.type === "heading" ? 2 : 4}" placeholder="Texto (use {{nome}} pra personalizar)">${esc(block.text)}</textarea>`;
+      }
+      if (block.type === "image") {
+        return `
+          <div class="image-upload">
+            <img class="image-upload__preview ${block.src ? "" : "is-empty"}" src="${block.src ? esc(block.src) : ""}" alt="" />
+            <div class="image-upload__actions">
+              <label class="btn btn-ghost btn-small image-upload__pick">Escolher imagem
+                <input type="file" accept="image/*" class="hidden eb-image-file" />
+              </label>
+            </div>
+            <span class="image-upload__status"></span>
+          </div>
+          <input type="text" class="eb-link" placeholder="Link ao clicar na imagem (opcional)" value="${esc(block.link || "")}" style="margin-top:8px;" />`;
+      }
+      if (block.type === "button") {
+        return `
+          <input type="text" class="eb-label" placeholder="Texto do botão" value="${esc(block.label || "")}" />
+          <input type="text" class="eb-url" placeholder="Link (https://...)" value="${esc(block.url || "")}" />
+          <select class="settings-select eb-align">
+            <option value="left" ${block.align === "left" ? "selected" : ""}>Esquerda</option>
+            <option value="center" ${block.align === "center" ? "selected" : ""}>Centro</option>
+            <option value="right" ${block.align === "right" ? "selected" : ""}>Direita</option>
+          </select>`;
+      }
+      if (block.type === "spacer") {
+        return `<input type="number" class="eb-height" min="4" max="120" value="${block.height || 24}" placeholder="Altura em pixels" />`;
+      }
+      return '<p class="field__hint" style="margin:0;">Uma linha divisória.</p>';
+    }
+
+    const EMAIL_BLOCK_LABELS = { heading: "Título", text: "Texto", image: "Imagem", button: "Botão", divider: "Divisor", spacer: "Espaço" };
+
+    function renderBlocksEditor() {
+      const el = document.getElementById("email-blocks-editor");
+      if (!emailTemplateDraft.blocks.length) {
+        el.innerHTML = '<p class="field__hint">Nenhum bloco ainda — adicione um abaixo.</p>';
+        return;
+      }
+      el.innerHTML = emailTemplateDraft.blocks
+        .map(
+          (b, i) => `<div class="email-block" data-block-index="${i}">
+            <div class="email-block__header">
+              <span class="email-block__type">${EMAIL_BLOCK_LABELS[b.type] || b.type}</span>
+              <div class="email-block__move">
+                <button type="button" class="btn-icon eb-move-up" ${i === 0 ? "disabled" : ""} title="Mover pra cima">↑</button>
+                <button type="button" class="btn-icon eb-move-down" ${i === emailTemplateDraft.blocks.length - 1 ? "disabled" : ""} title="Mover pra baixo">↓</button>
+              </div>
+              <button type="button" class="btn-delete eb-remove">Remover</button>
+            </div>
+            ${blockEditorFieldsHtml(b)}
+          </div>`
+        )
+        .join("");
+    }
+
+    function syncBlocksFromDom() {
+      document.querySelectorAll("#email-blocks-editor .email-block").forEach((el) => {
+        const i = Number(el.dataset.blockIndex);
+        const block = emailTemplateDraft.blocks[i];
+        if (!block) return;
+        if (block.type === "heading" || block.type === "text") block.text = el.querySelector(".eb-text").value;
+        if (block.type === "image") {
+          const img = el.querySelector(".image-upload__preview");
+          block.src = img && img.getAttribute("src") ? img.getAttribute("src") : "";
+          block.link = el.querySelector(".eb-link").value;
+        }
+        if (block.type === "button") {
+          block.label = el.querySelector(".eb-label").value;
+          block.url = el.querySelector(".eb-url").value;
+          block.align = el.querySelector(".eb-align").value;
+        }
+        if (block.type === "spacer") block.height = Number(el.querySelector(".eb-height").value) || 24;
+      });
+    }
+
+    /** Igual ao renderEmailHtml do worker — usado só pra pré-visualizar sem precisar salvar antes. */
+    function clientRenderBlockHtml(block) {
+      const t = (block.text || "").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+      if (block.type === "heading")
+        return `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:24px;font-weight:900;color:#0b1b2b;">${t}</td></tr>`;
+      if (block.type === "text")
+        return `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#0b1b2b;">${t}</td></tr>`;
+      if (block.type === "image" && block.src)
+        return `<tr><td style="padding:0 28px 16px;"><img src="${block.src}" style="width:100%;max-width:544px;display:block;border-radius:8px;" /></td></tr>`;
+      if (block.type === "button")
+        return `<tr><td style="padding:0 28px 24px;" align="${block.align || "left"}"><a href="${block.url || "#"}" style="background:#024ba5;color:#fff;text-decoration:none;padding:14px 30px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:15px;display:inline-block;">${(block.label || "Saiba mais").replace(/</g, "&lt;")}</a></td></tr>`;
+      if (block.type === "divider")
+        return `<tr><td style="padding:0 28px 16px;"><hr style="border:none;border-top:1px solid #e2d9c9;" /></td></tr>`;
+      if (block.type === "spacer") return `<tr><td style="line-height:${block.height || 24}px;font-size:1px;">&nbsp;</td></tr>`;
+      return "";
+    }
+
+    function updateEmailPreview() {
+      const body = emailTemplateDraft.blocks.map(clientRenderBlockHtml).join("");
+      const html = `<!doctype html><html><body style="margin:0;padding:0;background:#f2ede6;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f2ede6;">
+          <tr><td align="center" style="padding:32px 16px;">
+            <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;max-width:600px;width:100%;">
+              <tr><td style="line-height:24px;font-size:1px;">&nbsp;</td></tr>
+              ${body}
+              <tr><td style="padding:24px 28px;border-top:1px solid #e2d9c9;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#5c6773;text-align:center;">
+                Você está recebendo este e-mail porque faz parte da lista de contatos da Solua Imóveis.
+                <br /><a href="#" style="color:#5c6773;">Cancelar inscrição</a>
+              </td></tr>
+            </table>
+          </td></tr>
+        </table>
+      </body></html>`;
+      document.getElementById("email-preview-frame").srcdoc = html;
+    }
+
+    async function saveTemplate() {
+      syncBlocksFromDom();
+      emailTemplateDraft.nome = document.getElementById("email-tpl-nome").value.trim();
+      const errorEl = document.getElementById("email-template-error");
+      errorEl.classList.remove("is-visible");
+      if (!emailTemplateDraft.nome) {
+        errorEl.textContent = "Dê um nome pro criativo.";
+        errorEl.classList.add("is-visible");
+        return;
+      }
+      try {
+        await apiPost("/admin/email/templates", emailTemplateDraft);
+        closeTemplateEditor();
+        await loadEmailTemplates();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function deleteTemplate(id) {
+      if (!confirm("Excluir esse criativo? Campanhas que já usam ele continuam com o histórico, mas você não vai poder criar novas com ele.")) return;
+      try {
+        await apiDelete(`/admin/email/templates/${id}`);
+        await loadEmailTemplates();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    // ---- Campanhas ----
+
+    function renderEmailCampaignTemplateSelect() {
+      const sel = document.getElementById("email-camp-template");
+      sel.innerHTML = emailTemplates.length
+        ? emailTemplates.map((t) => `<option value="${t.id}">${esc(t.nome)}</option>`).join("")
+        : '<option value="">Crie um criativo primeiro</option>';
+    }
+
+    function renderEmailCampaignListSelect() {
+      const sel = document.getElementById("email-camp-list");
+      sel.innerHTML = emailLists.length
+        ? emailLists.map((l) => `<option value="${l.id}">${esc(l.nome)} (${l.total_contatos})</option>`).join("")
+        : '<option value="">Crie uma lista primeiro</option>';
+    }
+
+    async function loadEmailCampaigns() {
+      const data = await apiGet("/admin/email/campaigns");
+      emailCampaigns = data.campaigns;
+      renderCampaignsList();
+    }
+
+    const CAMPAIGN_STATUS_LABELS = { rascunho: "Rascunho", enviando: "Enviando", concluida: "Concluída" };
+
+    function renderCampaignsList() {
+      const el = document.getElementById("email-campaigns-list");
+      el.innerHTML = emailCampaigns.length
+        ? emailCampaigns
+            .map((c) => {
+              const total = c.total || 0;
+              const done = (c.enviados || 0) + (c.falhas || 0);
+              const pct = total ? Math.round((done / total) * 100) : 0;
+              return `<div class="email-item-row" style="flex-direction: column; align-items: stretch;">
+                <div style="display:flex; align-items:center; gap:12px; flex-wrap: wrap;">
+                  <div class="email-item-row__main">
+                    <div class="email-item-row__title">${esc(c.nome)} <span class="status-badge ${c.status}">${CAMPAIGN_STATUS_LABELS[c.status] || c.status}</span></div>
+                    <div class="email-item-row__meta">Assunto: ${esc(c.assunto)} · Lista: ${esc(c.lista_nome || "—")} · ${c.enviados || 0} enviado(s)${c.falhas ? `, ${c.falhas} falha(s)` : ""} de ${total}</div>
+                  </div>
+                  <div class="email-item-row__actions">
+                    ${
+                      c.status !== "concluida"
+                        ? `<button class="btn btn-primary btn-small" type="button" data-send-campaign="${c.id}">${c.status === "enviando" ? "Continuar envio" : "Enviar"}</button>`
+                        : ""
+                    }
+                    <button class="btn-delete" type="button" data-delete-campaign="${c.id}">Excluir</button>
+                  </div>
+                </div>
+                <div class="email-progress"><div class="email-progress__bar" style="width:${pct}%"></div></div>
+                <p class="field__hint" style="margin:0;" data-campaign-status="${c.id}"></p>
+              </div>`;
+            })
+            .join("")
+        : '<p class="field__hint">Nenhuma campanha ainda.</p>';
+    }
+
+    async function createCampaign() {
+      const errorEl = document.getElementById("email-campaign-error");
+      errorEl.classList.remove("is-visible");
+      const nome = document.getElementById("email-camp-nome").value.trim();
+      const assunto = document.getElementById("email-camp-assunto").value.trim();
+      const templateId = document.getElementById("email-camp-template").value;
+      const listId = document.getElementById("email-camp-list").value;
+      if (!nome || !assunto || !templateId || !listId) {
+        errorEl.textContent = "Preencha nome, assunto, criativo e lista.";
+        errorEl.classList.add("is-visible");
+        return;
+      }
+      try {
+        await apiPost("/admin/email/campaigns", { nome, assunto, templateId, listId });
+        document.getElementById("email-camp-nome").value = "";
+        document.getElementById("email-camp-assunto").value = "";
+        await loadEmailCampaigns();
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function deleteCampaign(id) {
+      if (!confirm("Excluir essa campanha? O histórico de envio se perde.")) return;
+      try {
+        await apiDelete(`/admin/email/campaigns/${id}`);
+        await loadEmailCampaigns();
+      } catch (err) {
+        alert(err.message);
+      }
+    }
+
+    async function sendCampaign(id, btn) {
+      btn.disabled = true;
+      let errorMsg = null;
+
+      try {
+        let done = false;
+        let totalSent = 0;
+        while (!done) {
+          const data = await apiPost(`/admin/email/campaigns/${id}/send`);
+          if (data.done) {
+            done = true;
+          } else {
+            totalSent += data.sentNow;
+            const statusEl = document.querySelector(`[data-campaign-status="${id}"]`);
+            if (statusEl) statusEl.textContent = `Enviando… ${totalSent} enviado(s), ${data.remaining} restante(s).`;
+          }
+        }
+        // ao terminar, o recarregamento abaixo já atualiza o selo e a contagem — não precisa de
+        // mensagem extra aqui (e ela seria apagada pelo re-render de qualquer forma)
+      } catch (err) {
+        errorMsg = err.message;
+      } finally {
+        btn.disabled = false;
+        await loadEmailCampaigns();
+        if (errorMsg) {
+          const statusEl = document.querySelector(`[data-campaign-status="${id}"]`);
+          if (statusEl) statusEl.textContent = "Erro: " + errorMsg;
+        }
+      }
+    }
+
+    // ---- eventos ----
+
+    document.getElementById("btn-save-email-settings").addEventListener("click", saveEmailSettings);
+
+    document.getElementById("email-list-select").addEventListener("change", async (e) => {
+      currentEmailListId = Number(e.target.value) || null;
+      document.getElementById("email-list-detail").classList.toggle("hidden", !currentEmailListId);
+      await loadContactsForCurrentList();
+    });
+
+    document.getElementById("btn-new-email-list").addEventListener("click", createEmailList);
+    document.getElementById("btn-delete-email-list").addEventListener("click", deleteCurrentEmailList);
+    document.getElementById("btn-import-paste").addEventListener("click", importPastedContacts);
+
+    document.querySelectorAll("[data-import-form]").forEach((btn) => {
+      btn.addEventListener("click", () => importFromForm(btn.dataset.importForm));
+    });
+
+    document.getElementById("email-contacts-rows").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-remove-contact]");
+      if (btn && confirm("Remover esse contato da lista?")) removeContact(btn.dataset.removeContact);
+    });
+
+    document.getElementById("btn-new-template").addEventListener("click", () => openTemplateEditor(null));
+    document.getElementById("btn-cancel-template").addEventListener("click", closeTemplateEditor);
+    document.getElementById("btn-save-template").addEventListener("click", saveTemplate);
+
+    document.getElementById("email-templates-list").addEventListener("click", (e) => {
+      const editBtn = e.target.closest("[data-edit-template]");
+      if (editBtn) {
+        const t = emailTemplates.find((x) => String(x.id) === editBtn.dataset.editTemplate);
+        if (t) openTemplateEditor(t);
+        return;
+      }
+      const delBtn = e.target.closest("[data-delete-template]");
+      if (delBtn) deleteTemplate(delBtn.dataset.deleteTemplate);
+    });
+
+    document.querySelectorAll("[data-add-block]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        syncBlocksFromDom();
+        emailTemplateDraft.blocks.push(emptyBlockFor(btn.dataset.addBlock));
+        renderBlocksEditor();
+        updateEmailPreview();
+      });
+    });
+
+    document.getElementById("email-blocks-editor").addEventListener("click", (e) => {
+      const blockEl = e.target.closest(".email-block");
+      if (!blockEl) return;
+      const i = Number(blockEl.dataset.blockIndex);
+
+      if (e.target.closest(".eb-remove")) {
+        syncBlocksFromDom();
+        emailTemplateDraft.blocks.splice(i, 1);
+        renderBlocksEditor();
+        updateEmailPreview();
+        return;
+      }
+      if (e.target.closest(".eb-move-up")) {
+        syncBlocksFromDom();
+        if (i > 0) swapItems(emailTemplateDraft.blocks, i, i - 1);
+        renderBlocksEditor();
+        updateEmailPreview();
+        return;
+      }
+      if (e.target.closest(".eb-move-down")) {
+        syncBlocksFromDom();
+        if (i < emailTemplateDraft.blocks.length - 1) swapItems(emailTemplateDraft.blocks, i, i + 1);
+        renderBlocksEditor();
+        updateEmailPreview();
+      }
+    });
+
+    document.getElementById("email-blocks-editor").addEventListener("input", (e) => {
+      if (e.target.closest(".email-block")) {
+        syncBlocksFromDom();
+        updateEmailPreview();
+      }
+    });
+
+    document.getElementById("email-blocks-editor").addEventListener("change", (e) => {
+      const fileInput = e.target.closest(".eb-image-file");
+      if (fileInput && fileInput.files[0]) {
+        const blockEl = fileInput.closest(".email-block");
+        const previewEl = blockEl.querySelector(".image-upload__preview");
+        const statusEl = blockEl.querySelector(".image-upload__status");
+        handleImageUpload(fileInput.files[0], { maxDim: 1200, maxChars: 900000, quality: 0.8 }, previewEl, statusEl).then(() => {
+          syncBlocksFromDom();
+          updateEmailPreview();
+        });
+        fileInput.value = "";
+        return;
+      }
+      if (e.target.closest(".email-block")) {
+        syncBlocksFromDom();
+        updateEmailPreview();
+      }
+    });
+
+    document.getElementById("btn-create-campaign").addEventListener("click", createCampaign);
+
+    document.getElementById("email-campaigns-list").addEventListener("click", (e) => {
+      const sendBtn = e.target.closest("[data-send-campaign]");
+      if (sendBtn) {
+        sendCampaign(sendBtn.dataset.sendCampaign, sendBtn);
+        return;
+      }
+      const delBtn = e.target.closest("[data-delete-campaign]");
+      if (delBtn) deleteCampaign(delBtn.dataset.deleteCampaign);
+    });
+
+    // ---------------------------------------------------------------
+    // Convite (RSVPs + configuração em JSON)
+    // ---------------------------------------------------------------
+
+    let conviteDataLoaded = false;
+    let currentRowsConvite = [];
+
+    const CONVITE_CONFIG_EXEMPLO = {
+      visual: {
+        corPapel: "#FBF6EC", corPapelSombra: "#E7DEC8", corEnvelope: "#F2EDE6", corEnvelopeForro: "#E2D9C9",
+        corTinta: "#1c2733", corDestaque: "#024BA5", corFundo1: "#F2EDE6", corFundo2: "#E2D9C9",
+        botoesArredondados: true, texturaPapel: true, selo: { ativo: true, iniciais: "S", cor: "#024BA5" },
+      },
+      marca: { nome: "Solua Imóveis", monograma: "S", logoUrl: "" },
+      evento: {
+        chamada: "Você está convidado", titulo: "Confraternização Solua", subtitulo: "",
+        anfitriao: "Solua Imóveis", saudacao: "", mensagem: "Venha celebrar com a gente.",
+        dataISO: "2026-12-20T19:00:00", dataLabel: "20 de dezembro de 2026", horaLabel: "19h",
+        local: { nome: "", endereco: "", mapaUrl: "" },
+        trajes: { texto: "", link: "" },
+        avisoExtra: { ativo: false, titulo: "", texto: "" },
+      },
+      personalizacao: { ativo: true, parametroUrl: "para", textoPadrao: "Convidado(a) Especial" },
+      fundoTelaCheia: { ativo: false, tipo: "foto", fotoUrl: "", videoUrl: "", videoMudo: true, opacidadeOverlay: 0.55 },
+      midiaCartao: {
+        tipo: "foto", fotoUrl: "", fotoAlt: "", legenda: "", videoUrl: "", videoAutoplay: false,
+        videoLoop: true, videoMudo: true, videoPoster: "", videoBotaoSom: true, galeria: [],
+      },
+      recursos: {
+        contagemRegressiva: true, somAoAbrirEnvelope: true, celebracaoAoConfirmar: true,
+        botaoAdicionarCalendario: true, botaoCompartilhar: true,
+      },
+      formulario: {
+        titulo: "Confirme sua presença", subtitulo: "", textoBotao: "CONFIRMAR PRESENÇA",
+        campos: {
+          email: { ativo: true, obrigatorio: false },
+          telefone: { ativo: true, obrigatorio: false },
+          empresa: { ativo: false, obrigatorio: false },
+          acompanhantes: { ativo: true, obrigatorio: false, maximo: 3 },
+          restricoesAlimentares: { ativo: true, obrigatorio: false },
+          perguntaExtra: { ativo: false, label: "", placeholder: "", obrigatorio: false },
+        },
+      },
+      contato: { whatsapp: "", instagram: "", site: "" },
+    };
+
+    function renderRowsConvite(rows) {
+      currentRowsConvite = rows;
+      document.getElementById("count-convite").textContent = rows.length + " confirmação(ões)";
+      document.getElementById("rows-convite").innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${esc(fmtDate(r.criado_em))}</td>
+            <td>${esc(r.nome)}</td>
+            <td>${esc(r.email)}</td>
+            <td>${esc(r.telefone)}</td>
+            <td>${esc(r.empresa)}</td>
+            <td>${esc(r.acompanhantes)}</td>
+            <td class="cell-wrap">${esc(r.restricoes)}</td>
+            <td class="cell-wrap">${esc(r.extra)}</td>
+            <td><button class="btn-delete" type="button" data-delete-convite-id="${esc(r.id)}">Excluir</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function loadDataConvite(token) {
+      const res = await fetch("/admin/convite/rsvps", { headers: { "x-admin-token": token }, cache: "no-store" });
+      if (!res.ok) throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar confirmações.");
+      const data = await res.json();
+      return data.rows || [];
+    }
+
+    async function deleteRowConvite(id, btn) {
+      const nome = currentRowsConvite.find((r) => String(r.id) === String(id))?.nome || "essa confirmação";
+      if (!confirm(`Excluir a confirmação de "${nome}"? Essa ação não pode ser desfeita.`)) return;
+      btn.disabled = true;
+      btn.textContent = "Excluindo…";
+      try {
+        const data = await apiDelete(`/admin/convite/rsvps/${encodeURIComponent(id)}`);
+        if (!data.ok) throw new Error(data.error || "Não foi possível excluir.");
+        currentRowsConvite = currentRowsConvite.filter((r) => String(r.id) !== String(id));
+        renderRowsConvite(currentRowsConvite);
+      } catch (err) {
+        alert(err.message || "Erro ao excluir.");
+        btn.disabled = false;
+        btn.textContent = "Excluir";
+      }
+    }
+
+    function toCsvConvite(rows) {
+      const headers = ["criado_em", "nome", "email", "telefone", "empresa", "acompanhantes", "restricoes", "extra"];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    async function loadConviteConfigIntoTextarea() {
+      const errorEl = document.getElementById("convite-config-error");
+      errorEl.classList.remove("is-visible");
+      try {
+        const data = await apiGet("/api/convite/config");
+        document.getElementById("convite-config-json").value = JSON.stringify(data.config || CONVITE_CONFIG_EXEMPLO, null, 2);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function saveConviteConfig() {
+      const btn = document.getElementById("btn-convite-save");
+      const errorEl = document.getElementById("convite-config-error");
+      const successEl = document.getElementById("convite-config-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+
+      let parsed;
+      try {
+        parsed = JSON.parse(document.getElementById("convite-config-json").value);
+      } catch (err) {
+        errorEl.textContent = "JSON inválido: " + err.message;
+        errorEl.classList.add("is-visible");
+        return;
+      }
+
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Salvando…";
+      try {
+        const res = await fetch("/admin/convite/config", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...authHeaders() },
+          body: JSON.stringify(parsed),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || "Não foi possível salvar.");
+        successEl.classList.add("is-visible");
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    async function initConvite() {
+      if (conviteDataLoaded) return;
+      conviteDataLoaded = true;
+      try {
+        const token = sessionStorage.getItem(STORAGE_KEY);
+        renderRowsConvite(await loadDataConvite(token));
+        await loadConviteConfigIntoTextarea();
+      } catch (err) {
+        conviteDataLoaded = false;
+        alert(err.message || "Erro ao carregar Convite.");
+      }
+    }
+
+    document.getElementById("btn-refresh-convite").addEventListener("click", async () => {
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      if (token) renderRowsConvite(await loadDataConvite(token));
+    });
+
+    document.getElementById("rows-convite").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-delete-convite-id]");
+      if (btn) deleteRowConvite(btn.dataset.deleteConviteId, btn);
+    });
+
+    document.getElementById("btn-csv-convite").addEventListener("click", () => {
+      const blob = new Blob([toCsvConvite(currentRowsConvite)], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "convite-confirmacoes-solua.csv";
+      link.click();
+    });
+
+    document.getElementById("btn-convite-load").addEventListener("click", loadConviteConfigIntoTextarea);
+    document.getElementById("btn-convite-example").addEventListener("click", () => {
+      document.getElementById("convite-config-json").value = JSON.stringify(CONVITE_CONFIG_EXEMPLO, null, 2);
+    });
+    document.getElementById("btn-convite-save").addEventListener("click", saveConviteConfig);
+
+    // reentra sozinho se já tiver token salvo nesta aba
+    const savedToken = sessionStorage.getItem(STORAGE_KEY);
+    if (savedToken) tryEnter(savedToken);
+  </script>
+</body>
+</html>
