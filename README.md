@@ -64,7 +64,7 @@ npm run dev
 ## Publicar (deploy)
 
 Este repositório já está configurado para reutilizar os recursos Cloudflare existentes:
-- Worker: `formsvagas`
+- Worker: `formsvaga`
 - Banco D1: `solua-candidaturas` (tabelas `candidaturas`, `indicacoes`, `captacoes`, `site_config`,
   `indicacao_config` e `captacao_config` já criadas)
 
@@ -76,7 +76,7 @@ npx wrangler login   # autentica com sua conta Cloudflare
 npm run deploy
 ```
 
-Ou conecte este repositório ao Worker pelo painel da Cloudflare (**Workers & Pages → formsvagas →
+Ou conecte este repositório ao Worker pelo painel da Cloudflare (**Workers & Pages → formsvaga →
 Settings → Builds**) apontando para a branch deste projeto — cada push passa a publicar
 automaticamente.
 
