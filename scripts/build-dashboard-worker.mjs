@@ -12,6 +12,8 @@ const indicacaoJs = readFileSync("public/indicacao.js", "utf8");
 const captacaoHtml = readFileSync("public/captacao.html", "utf8");
 const captacaoJs = readFileSync("public/captacao.js", "utf8");
 const mailHtml = readFileSync("public/mail.html", "utf8");
+const conviteHtml = readFileSync("public/convite.html", "utf8");
+const conviteJs = readFileSync("public/convite.js", "utf8");
 
 const header = `/**
  * Worker da Solua Imóveis — formulário de candidatura para corretores(as) parceiros(as).
@@ -37,6 +39,8 @@ const constants = [
   ["CAPTACAO_HTML", captacaoHtml],
   ["CAPTACAO_JS", captacaoJs],
   ["MAIL_HTML", mailHtml],
+  ["CONVITE_HTML", conviteHtml],
+  ["CONVITE_JS", conviteJs],
 ]
   .map(([name, value]) => `const ${name} = ${JSON.stringify(value)};`)
   .join("\n");

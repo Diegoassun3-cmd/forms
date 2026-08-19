@@ -15,6 +15,11 @@ estáticos, gravando cada resposta em tabelas próprias no banco D1.
   aparecendo só quando a pessoa responde que já tem um valor em mente. Ao digitar o CEP, endereço,
   bairro e cidade são preenchidos automaticamente via [ViaCEP](https://viacep.com.br/) (API pública,
   sem chave) — se o CEP não for encontrado, a pessoa preenche manualmente sem travar o formulário.
+- **Convite** (`/convite`) — convite de papel/envelope pra eventos, com abertura animada, contagem
+  regressiva, mídia (foto/vídeo/galeria) e confirmação de presença (RSVP), incluindo "+ 1 no
+  calendário" e compartilhamento. A configuração (cores, textos, mídia, campos do formulário) é um
+  JSON livre, editável na aba **Convite** do `/admin` — schema rico demais pra valer a pena um
+  editor campo a campo.
 
 ## Estrutura
 

@@ -1010,6 +1010,105 @@ async function handleSendCampaignBatch(request, env, campaignId, url) {
   return jsonResponse({ ok: true, done: false, sentNow, failedNow, remaining });
 }
 
+// =====================================================================
+// Convite (papel/envelope): config em JSON livre (schema rico demais pra
+// validar campo a campo) + RSVPs.
+// =====================================================================
+
+async function handleGetConviteConfig(env) {
+  if (!env.DB) return jsonResponse({ ok: true, config: null });
+  try {
+    const row = await env.DB.prepare("SELECT data FROM convite_config WHERE id = 1").first();
+    return jsonResponse({ ok: true, config: row ? JSON.parse(row.data) : null });
+  } catch {
+    return jsonResponse({ ok: true, config: null });
+  }
+}
+
+async function handleSaveConviteConfig(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return jsonResponse({ ok: false, error: "Configuração inválida." }, 400);
+  }
+
+  const json = JSON.stringify(body);
+  if (json.length > 3000000) {
+    return jsonResponse({ ok: false, error: "Configuração grande demais (reduza o tamanho das imagens)." }, 400);
+  }
+
+  await env.DB.prepare(
+    "INSERT INTO convite_config (id, data) VALUES (1, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data"
+  )
+    .bind(json)
+    .run();
+
+  return jsonResponse({ ok: true, config: body });
+}
+
+async function handleListConviteRsvps(request, env) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+  const { results } = await env.DB.prepare("SELECT * FROM convite_rsvps ORDER BY criado_em DESC").all();
+  return jsonResponse({ ok: true, rows: results });
+}
+
+async function handleDeleteConviteRsvp(request, env, id) {
+  if (!isAuthorizedAdmin(request, env)) return jsonResponse({ ok: false, error: "Não autorizado." }, 401);
+  if (!env.DB) return jsonResponse({ ok: false, error: "Banco de dados não configurado (falta o binding DB)." }, 500);
+  if (!id || !/^\d+$/.test(id)) return jsonResponse({ ok: false, error: "ID inválido." }, 400);
+  await env.DB.prepare("DELETE FROM convite_rsvps WHERE id = ?").bind(id).run();
+  return jsonResponse({ ok: true });
+}
+
+async function handleSubmitConviteRsvp(request, env) {
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return jsonResponse({ ok: false, error: "JSON inválido." }, 400);
+  }
+  if (!isNonEmptyString(body.nome)) {
+    return jsonResponse({ ok: false, error: "Informe seu nome." }, 400);
+  }
+  if (!env.DB) {
+    return jsonResponse(
+      { ok: false, error: "Banco de dados não configurado neste Worker (falta o binding DB)." },
+      500
+    );
+  }
+
+  const now = new Date().toISOString();
+  try {
+    await env.DB.prepare(
+      `INSERT INTO convite_rsvps (nome, email, telefone, empresa, acompanhantes, restricoes, extra, criado_em)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+      .bind(
+        body.nome.trim(),
+        (body.email || "").trim() || null,
+        (body.telefone || "").trim() || null,
+        (body.empresa || "").trim() || null,
+        body.acompanhantes != null && body.acompanhantes !== "" ? String(body.acompanhantes).trim() : null,
+        (body.restricoes || "").trim() || null,
+        (body.extra || "").trim() || null,
+        now
+      )
+      .run();
+  } catch (err) {
+    return jsonResponse({ ok: false, error: "Erro ao salvar confirmação." }, 500);
+  }
+
+  return jsonResponse({ ok: true });
+}
+
 export default {
   async fetch(request, env) {
     try {
@@ -1177,6 +1276,40 @@ export default {
         return new Response(MAIL_HTML, {
           headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
         });
+      }
+
+      if (url.pathname === "/convite") {
+        return new Response(CONVITE_HTML, {
+          headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+        });
+      }
+
+      if (url.pathname === "/convite.js") {
+        return new Response(CONVITE_JS, {
+          headers: { "content-type": "text/javascript; charset=utf-8", "cache-control": "no-store" },
+        });
+      }
+
+      if (url.pathname === "/api/convite/config") {
+        return await handleGetConviteConfig(env);
+      }
+
+      if (url.pathname === "/admin/convite/config" && request.method === "POST") {
+        return await handleSaveConviteConfig(request, env);
+      }
+
+      if (url.pathname === "/api/convite/rsvp") {
+        if (request.method !== "POST") return jsonResponse({ ok: false, error: "Método não permitido." }, 405);
+        return await handleSubmitConviteRsvp(request, env);
+      }
+
+      if (url.pathname === "/admin/convite/rsvps") {
+        return await handleListConviteRsvps(request, env);
+      }
+
+      {
+        const m = url.pathname.match(/^\/admin\/convite\/rsvps\/(\d+)$/);
+        if (m && request.method === "DELETE") return await handleDeleteConviteRsvp(request, env, m[1]);
       }
 
       return new Response(INDEX_HTML, {

@@ -197,6 +197,7 @@
         <button class="tab-btn" type="button" data-tab="config">Configurações</button>
         <button class="tab-btn" type="button" data-tab="preview">Visualizar</button>
         <button class="tab-btn" type="button" data-tab="email">Email Marketing</button>
+        <button class="tab-btn" type="button" data-tab="convite">Convite</button>
       </div>
 
       <!-- ===================== ABA: CANDIDATURAS ===================== -->
@@ -690,6 +691,46 @@
 
             <div id="email-campaigns-list" style="margin-top: 20px;"></div>
           </div>
+      </div>
+
+      <!-- ===================== ABA: CONVITE ===================== -->
+      <div class="tab-panel" id="tab-convite">
+        <div class="admin__header">
+          <h1 class="admin__title">Convite — confirmações (RSVP)</h1>
+          <div class="toolbar">
+            <span class="admin__count" id="count-convite"></span>
+            <button class="btn btn-ghost btn-small" id="btn-refresh-convite" type="button">Atualizar</button>
+            <button class="btn btn-primary btn-small" id="btn-csv-convite" type="button">Exportar CSV</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Data</th><th>Nome</th><th>E-mail</th><th>Telefone</th><th>Empresa</th>
+                <th>Acompanhantes</th><th>Restrições</th><th>Extra</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody id="rows-convite"></tbody>
+          </table>
+        </div>
+
+        <div class="settings-section" style="max-width: 780px; margin-top: 32px;">
+          <h2>Configuração do convite</h2>
+          <p class="field__hint">
+            Edite o JSON abaixo pra personalizar textos, cores, mídia e o comportamento do convite
+            em <a href="/convite" target="_blank" rel="noopener">/convite</a>. Use "Ver exemplo" pra
+            começar do zero, ou "Carregar atual" pra ver o que já está salvo.
+          </p>
+          <div class="toolbar" style="margin-bottom: 10px;">
+            <button class="btn btn-ghost btn-small" id="btn-convite-load" type="button">Carregar atual</button>
+            <button class="btn btn-ghost btn-small" id="btn-convite-example" type="button">Ver exemplo</button>
+          </div>
+          <textarea id="convite-config-json" rows="20" spellcheck="false" style="width:100%; font-family: ui-monospace, monospace; font-size: 0.82rem; border: 1.5px solid var(--creme-escuro); border-radius: 10px; padding: 14px;"></textarea>
+          <button class="btn btn-primary" id="btn-convite-save" type="button" style="margin-top: 12px;">Salvar configuração</button>
+          <p class="error-msg" id="convite-config-error"></p>
+          <p class="success-msg" id="convite-config-success">Salvo!</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1584,6 +1625,7 @@
         });
         if (btn.dataset.tab === "preview") refreshPreview();
         if (btn.dataset.tab === "email") initEmailMarketing();
+        if (btn.dataset.tab === "convite") initConvite();
       });
     });
 
@@ -2456,6 +2498,190 @@
       const delBtn = e.target.closest("[data-delete-campaign]");
       if (delBtn) deleteCampaign(delBtn.dataset.deleteCampaign);
     });
+
+    // ---------------------------------------------------------------
+    // Convite (RSVPs + configuração em JSON)
+    // ---------------------------------------------------------------
+
+    let conviteDataLoaded = false;
+    let currentRowsConvite = [];
+
+    const CONVITE_CONFIG_EXEMPLO = {
+      visual: {
+        corPapel: "#FBF6EC", corPapelSombra: "#E7DEC8", corEnvelope: "#F2EDE6", corEnvelopeForro: "#E2D9C9",
+        corTinta: "#1c2733", corDestaque: "#024BA5", corFundo1: "#F2EDE6", corFundo2: "#E2D9C9",
+        botoesArredondados: true, texturaPapel: true, selo: { ativo: true, iniciais: "S", cor: "#024BA5" },
+      },
+      marca: { nome: "Solua Imóveis", monograma: "S", logoUrl: "" },
+      evento: {
+        chamada: "Você está convidado", titulo: "Confraternização Solua", subtitulo: "",
+        anfitriao: "Solua Imóveis", saudacao: "", mensagem: "Venha celebrar com a gente.",
+        dataISO: "2026-12-20T19:00:00", dataLabel: "20 de dezembro de 2026", horaLabel: "19h",
+        local: { nome: "", endereco: "", mapaUrl: "" },
+        trajes: { texto: "", link: "" },
+        avisoExtra: { ativo: false, titulo: "", texto: "" },
+      },
+      personalizacao: { ativo: true, parametroUrl: "para", textoPadrao: "Convidado(a) Especial" },
+      fundoTelaCheia: { ativo: false, tipo: "foto", fotoUrl: "", videoUrl: "", videoMudo: true, opacidadeOverlay: 0.55 },
+      midiaCartao: {
+        tipo: "foto", fotoUrl: "", fotoAlt: "", legenda: "", videoUrl: "", videoAutoplay: false,
+        videoLoop: true, videoMudo: true, videoPoster: "", videoBotaoSom: true, galeria: [],
+      },
+      recursos: {
+        contagemRegressiva: true, somAoAbrirEnvelope: true, celebracaoAoConfirmar: true,
+        botaoAdicionarCalendario: true, botaoCompartilhar: true,
+      },
+      formulario: {
+        titulo: "Confirme sua presença", subtitulo: "", textoBotao: "CONFIRMAR PRESENÇA",
+        campos: {
+          email: { ativo: true, obrigatorio: false },
+          telefone: { ativo: true, obrigatorio: false },
+          empresa: { ativo: false, obrigatorio: false },
+          acompanhantes: { ativo: true, obrigatorio: false, maximo: 3 },
+          restricoesAlimentares: { ativo: true, obrigatorio: false },
+          perguntaExtra: { ativo: false, label: "", placeholder: "", obrigatorio: false },
+        },
+      },
+      contato: { whatsapp: "", instagram: "", site: "" },
+    };
+
+    function renderRowsConvite(rows) {
+      currentRowsConvite = rows;
+      document.getElementById("count-convite").textContent = rows.length + " confirmação(ões)";
+      document.getElementById("rows-convite").innerHTML = rows
+        .map(
+          (r) => `<tr>
+            <td>${esc(fmtDate(r.criado_em))}</td>
+            <td>${esc(r.nome)}</td>
+            <td>${esc(r.email)}</td>
+            <td>${esc(r.telefone)}</td>
+            <td>${esc(r.empresa)}</td>
+            <td>${esc(r.acompanhantes)}</td>
+            <td class="cell-wrap">${esc(r.restricoes)}</td>
+            <td class="cell-wrap">${esc(r.extra)}</td>
+            <td><button class="btn-delete" type="button" data-delete-convite-id="${esc(r.id)}">Excluir</button></td>
+          </tr>`
+        )
+        .join("");
+    }
+
+    async function loadDataConvite(token) {
+      const res = await fetch("/admin/convite/rsvps", { headers: { "x-admin-token": token }, cache: "no-store" });
+      if (!res.ok) throw new Error(res.status === 401 ? "Token inválido." : "Erro ao carregar confirmações.");
+      const data = await res.json();
+      return data.rows || [];
+    }
+
+    async function deleteRowConvite(id, btn) {
+      const nome = currentRowsConvite.find((r) => String(r.id) === String(id))?.nome || "essa confirmação";
+      if (!confirm(`Excluir a confirmação de "${nome}"? Essa ação não pode ser desfeita.`)) return;
+      btn.disabled = true;
+      btn.textContent = "Excluindo…";
+      try {
+        const data = await apiDelete(`/admin/convite/rsvps/${encodeURIComponent(id)}`);
+        if (!data.ok) throw new Error(data.error || "Não foi possível excluir.");
+        currentRowsConvite = currentRowsConvite.filter((r) => String(r.id) !== String(id));
+        renderRowsConvite(currentRowsConvite);
+      } catch (err) {
+        alert(err.message || "Erro ao excluir.");
+        btn.disabled = false;
+        btn.textContent = "Excluir";
+      }
+    }
+
+    function toCsvConvite(rows) {
+      const headers = ["criado_em", "nome", "email", "telefone", "empresa", "acompanhantes", "restricoes", "extra"];
+      const escCsv = (v) => `"${String(v ?? "").replace(/"/g, '""')}"`;
+      const lines = [headers.join(",")];
+      rows.forEach((r) => lines.push(headers.map((h) => escCsv(r[h])).join(",")));
+      return lines.join("\r\n");
+    }
+
+    async function loadConviteConfigIntoTextarea() {
+      const errorEl = document.getElementById("convite-config-error");
+      errorEl.classList.remove("is-visible");
+      try {
+        const data = await apiGet("/api/convite/config");
+        document.getElementById("convite-config-json").value = JSON.stringify(data.config || CONVITE_CONFIG_EXEMPLO, null, 2);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      }
+    }
+
+    async function saveConviteConfig() {
+      const btn = document.getElementById("btn-convite-save");
+      const errorEl = document.getElementById("convite-config-error");
+      const successEl = document.getElementById("convite-config-success");
+      errorEl.classList.remove("is-visible");
+      successEl.classList.remove("is-visible");
+
+      let parsed;
+      try {
+        parsed = JSON.parse(document.getElementById("convite-config-json").value);
+      } catch (err) {
+        errorEl.textContent = "JSON inválido: " + err.message;
+        errorEl.classList.add("is-visible");
+        return;
+      }
+
+      const original = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = "Salvando…";
+      try {
+        const res = await fetch("/admin/convite/config", {
+          method: "POST",
+          headers: { "content-type": "application/json", ...authHeaders() },
+          body: JSON.stringify(parsed),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok || !data.ok) throw new Error(data.error || "Não foi possível salvar.");
+        successEl.classList.add("is-visible");
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("is-visible");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = original;
+      }
+    }
+
+    async function initConvite() {
+      if (conviteDataLoaded) return;
+      conviteDataLoaded = true;
+      try {
+        const token = sessionStorage.getItem(STORAGE_KEY);
+        renderRowsConvite(await loadDataConvite(token));
+        await loadConviteConfigIntoTextarea();
+      } catch (err) {
+        conviteDataLoaded = false;
+        alert(err.message || "Erro ao carregar Convite.");
+      }
+    }
+
+    document.getElementById("btn-refresh-convite").addEventListener("click", async () => {
+      const token = sessionStorage.getItem(STORAGE_KEY);
+      if (token) renderRowsConvite(await loadDataConvite(token));
+    });
+
+    document.getElementById("rows-convite").addEventListener("click", (e) => {
+      const btn = e.target.closest("[data-delete-convite-id]");
+      if (btn) deleteRowConvite(btn.dataset.deleteConviteId, btn);
+    });
+
+    document.getElementById("btn-csv-convite").addEventListener("click", () => {
+      const blob = new Blob([toCsvConvite(currentRowsConvite)], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "convite-confirmacoes-solua.csv";
+      link.click();
+    });
+
+    document.getElementById("btn-convite-load").addEventListener("click", loadConviteConfigIntoTextarea);
+    document.getElementById("btn-convite-example").addEventListener("click", () => {
+      document.getElementById("convite-config-json").value = JSON.stringify(CONVITE_CONFIG_EXEMPLO, null, 2);
+    });
+    document.getElementById("btn-convite-save").addEventListener("click", saveConviteConfig);
 
     // reentra sozinho se já tiver token salvo nesta aba
     const savedToken = sessionStorage.getItem(STORAGE_KEY);
