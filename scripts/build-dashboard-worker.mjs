@@ -18,7 +18,7 @@ const conviteJs = readFileSync("public/convite.js", "utf8");
 const header = `/**
  * Worker da Solua Imóveis — formulário de candidatura para corretores(as) parceiros(as).
  * Versão "arquivo único" para colar no editor de código do painel da Cloudflare
- * (Workers & Pages → formsvagas → Edit code).
+ * (Workers & Pages → formsvaga → Edit code).
  *
  * Depois de colar e clicar em "Deploy", configure em Settings → Variables and Secrets:
  *  1) D1 database binding → variable name "DB" → banco "solua-candidaturas"
